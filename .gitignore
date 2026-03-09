@@ -42,6 +42,6 @@ pnpm-debug.log*
 # Prisma
 packages/database/prisma/migrations/migration_lock.toml
 
-# MkDocs
+# MkDocs build output
 site/
 encryptcontent.cache
