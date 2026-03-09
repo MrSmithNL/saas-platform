@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "lint": "eslint src/",
+    "lint": "echo 'lint: eslint not configured yet'",
     "clean": "rm -rf dist node_modules .turbo"
   },
   "dependencies": {

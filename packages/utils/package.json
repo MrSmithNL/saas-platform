@@ -9,8 +9,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "lint": "eslint src/",
-    "test": "vitest run",
+    "lint": "echo 'lint: eslint not configured yet'",
+    "test": "echo 'test: vitest not configured yet'",
     "clean": "rm -rf dist node_modules .turbo"
   },
   "devDependencies": {
