@@ -1,0 +1,47 @@
+// Sell Funnel domain models — vertical-specific schema
+// These models belong to the Sell Funnel bounded context
+
+// NOTE: This file will be merged with base.prisma during generation
+// All models include organisationId for RLS enforcement
+
+// === Sell Funnel Context (Phase 2) ===
+
+// Placeholder models — will be implemented in Phase 2
+// Keeping schema stubs here for planning purposes
+
+// model Funnel {
+//   id              String   @id @default(cuid())
+//   organisationId  String
+//   name            String
+//   slug            String
+//   status          String   @default("draft")  // draft, published, archived
+//   createdAt       DateTime @default(now())
+//   updatedAt       DateTime @updatedAt
+//   @@map("funnels")
+// }
+
+// model FunnelPage {
+//   id              String   @id @default(cuid())
+//   funnelId        String
+//   organisationId  String
+//   title           String
+//   slug            String
+//   pageType        String   // landing, upsell, checkout, thank-you
+//   content         Json?
+//   order           Int      @default(0)
+//   createdAt       DateTime @default(now())
+//   updatedAt       DateTime @updatedAt
+//   @@map("funnel_pages")
+// }
+
+// model Conversion {
+//   id              String   @id @default(cuid())
+//   funnelId        String
+//   organisationId  String
+//   visitorId       String
+//   pageId          String
+//   eventType       String   // view, click, submit, purchase
+//   metadata        Json?
+//   createdAt       DateTime @default(now())
+//   @@map("conversions")
+// }

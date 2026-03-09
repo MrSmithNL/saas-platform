@@ -1,0 +1,78 @@
+// Base Prisma schema — shared models across all verticals
+// Split by domain: auth.prisma, tenancy.prisma, billing.prisma, etc.
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// === Identity Context ===
+
+model User {
+  id            String   @id @default(cuid())
+  externalId    String   @unique // Clerk user ID
+  email         String   @unique
+  firstName     String?
+  lastName      String?
+  avatarUrl     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  memberships   OrganisationMember[]
+
+  @@map("users")
+}
+
+// === Tenancy Context ===
+
+model Organisation {
+  id            String   @id @default(cuid())
+  externalId    String   @unique // Clerk organisation ID
+  name          String
+  slug          String   @unique
+  logoUrl       String?
+  plan          String   @default("free")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  members       OrganisationMember[]
+  subscription  Subscription?
+
+  @@map("organisations")
+}
+
+model OrganisationMember {
+  id              String       @id @default(cuid())
+  role            String       @default("member") // owner, admin, member
+  userId          String
+  organisationId  String
+  createdAt       DateTime     @default(now())
+
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organisation    Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organisationId])
+  @@map("organisation_members")
+}
+
+// === Billing Context ===
+
+model Subscription {
+  id                String       @id @default(cuid())
+  organisationId    String       @unique
+  stripeCustomerId  String       @unique
+  stripeSubscriptionId String?   @unique
+  plan              String       @default("free")
+  status            String       @default("active")
+  currentPeriodEnd  DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  organisation      Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}

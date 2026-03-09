@@ -1,0 +1,34 @@
+{
+  "name": "@saas-platform/sell-funnel",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "clean": "rm -rf .next node_modules .turbo"
+  },
+  "dependencies": {
+    "@saas-platform/core": "workspace:*",
+    "@saas-platform/database": "workspace:*",
+    "@saas-platform/ui": "workspace:*",
+    "@saas-platform/utils": "workspace:*",
+    "@saas-platform/ai-gateway": "workspace:*",
+    "@saas-platform/feature-flags": "workspace:*",
+    "@saas-platform/notifications": "workspace:*",
+    "next": "^15.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0",
+    "@playwright/test": "^1.49.0"
+  }
+}
