@@ -21,6 +21,7 @@
     "check:circular": "madge --circular --extensions ts,tsx packages/ apps/",
     "check:depcruise": "depcruise --config .dependency-cruiser.mjs --output-type err packages/ apps/",
     "knip": "knip",
+    "create:vertical": "bash tooling/scripts/create-vertical.sh",
     "clean": "turbo clean && rm -rf node_modules",
     "prepare": "husky"
   },

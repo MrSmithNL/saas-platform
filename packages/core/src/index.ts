@@ -10,3 +10,4 @@ export * from "./tenancy";
 export * from "./billing";
 export * from "./rbac";
 export * from "./api";
+export * from "./platform";
