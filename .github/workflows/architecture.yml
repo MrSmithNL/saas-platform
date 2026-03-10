@@ -1,0 +1,92 @@
+name: Architecture Fitness Functions
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: architecture-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fitness-functions:
+    name: Architecture Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # FF-003 + FF-004: Dependency validation (circular deps, layer boundaries, direction)
+      - name: "FF-003/004: Dependency Cruiser — layer boundaries & circular deps"
+        run: npx depcruise --config .dependency-cruiser.mjs --output-type err packages/ apps/
+
+      # FF-003: Circular dependency check (Madge)
+      - name: "FF-003: Madge — circular dependency detection"
+        run: |
+          RESULT=$(npx madge --circular --extensions ts,tsx packages/ apps/ 2>&1 || true)
+          echo "$RESULT"
+          if echo "$RESULT" | grep -q "Found [1-9]"; then
+            echo "::error::Circular dependencies detected"
+            exit 1
+          fi
+
+      # FF-009: No hardcoded tenant IDs
+      - name: "FF-009: No hardcoded tenant IDs"
+        run: |
+          FOUND=$(grep -r --include="*.ts" --include="*.tsx" \
+            -E "tenant[_-]?id\s*[:=]\s*['\"][a-f0-9-]{8,}" \
+            packages/ apps/ 2>/dev/null | \
+            grep -v node_modules | \
+            grep -v '.test.' | \
+            grep -v '__tests__' | \
+            grep -v '.spec.' || true)
+          if [ -n "$FOUND" ]; then
+            echo "::error::Hardcoded tenant IDs detected"
+            echo "$FOUND"
+            exit 1
+          fi
+          echo "No hardcoded tenant IDs found"
+
+      # FF-010: Approved dependency check
+      - name: "FF-010: Dependency governance — approved list check"
+        run: node tooling/scripts/check-dependencies.mjs
+
+      # FF-008: File naming convention (kebab-case)
+      - name: "FF-008: File naming convention (kebab-case)"
+        run: |
+          BAD_FILES=$(find packages/ apps/ -name "*.ts" -o -name "*.tsx" | \
+            grep -v node_modules | \
+            grep -v '.d.ts' | \
+            grep -v '__tests__' | \
+            grep -v '.test.' | \
+            grep -v '.spec.' | \
+            grep -v '.config.' | \
+            while read -r f; do
+              BASE=$(basename "$f")
+              # Skip Next.js conventions and index files
+              case "$BASE" in
+                index.*|middleware.*|layout.*|page.*|loading.*|error.*|not-found.*|global.*) continue ;;
+              esac
+              # Check for uppercase letters (not kebab-case)
+              if echo "$BASE" | grep -qE '[A-Z]'; then
+                echo "$f"
+              fi
+            done || true)
+          if [ -n "$BAD_FILES" ]; then
+            echo "::warning::Files not following kebab-case naming:"
+            echo "$BAD_FILES"
+            # Warning only for now — will become error after grace period
+          fi
+          echo "File naming check complete"

@@ -16,6 +16,10 @@
     "db:migrate": "turbo db:migrate",
     "db:seed": "turbo db:seed",
     "test:mutation": "stryker run",
+    "test:arch": "bash tooling/scripts/check-architecture.sh",
+    "check:deps": "node tooling/scripts/check-dependencies.mjs",
+    "check:circular": "madge --circular --extensions ts,tsx packages/ apps/",
+    "check:depcruise": "depcruise --config .dependency-cruiser.mjs --output-type err packages/ apps/",
     "knip": "knip",
     "clean": "turbo clean && rm -rf node_modules",
     "prepare": "husky"

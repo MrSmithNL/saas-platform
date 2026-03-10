@@ -96,31 +96,46 @@ Layer 1: Foundation (packages/database, ui, config, utils)
 - Tests must pass before merge
 - Prisma schema validation on database changes
 - Bundle size monitoring for apps
+- **Architecture fitness functions** on every PR (layer boundaries, circular deps, dependency governance)
+
+### Architecture Enforcement (Technical Architect)
+
+- **dependency-cruiser** — validates dependency graph, blocks circular deps and layer violations
+- **eslint-plugin-boundaries** — enforces module boundaries and barrel export rules
+- **Madge** — circular dependency detection
+- **Approved dependency list** — `tooling/approved-dependencies.json` — new deps must be reviewed
+- **Golden path templates** — `tooling/generators/package/` — use for all new packages
+- Config: `.dependency-cruiser.mjs` in project root
+- CI: `.github/workflows/architecture.yml` runs all fitness functions
 
 ---
 
 ## Commands
 
 ```bash
-pnpm dev          # Start all apps in development
-pnpm build        # Build all packages and apps
-pnpm lint         # Lint all packages
-pnpm test         # Run all tests
-pnpm db:generate  # Generate Prisma client
-pnpm db:push      # Push schema to database
-pnpm db:migrate   # Run database migrations
-pnpm clean        # Clean all build artifacts
+pnpm dev            # Start all apps in development
+pnpm build          # Build all packages and apps
+pnpm lint           # Lint all packages
+pnpm test           # Run all tests
+pnpm test:arch      # Run all architecture fitness functions
+pnpm check:deps     # Check dependency governance (approved list)
+pnpm check:circular # Check for circular dependencies (Madge)
+pnpm check:depcruise # Run dependency-cruiser validation
+pnpm db:generate    # Generate Prisma client
+pnpm db:push        # Push schema to database
+pnpm db:migrate     # Run database migrations
+pnpm clean          # Clean all build artifacts
 ```
 
 ---
 
 ## Build Phases (Shape Up — 6-week cycles)
 
-| Phase | Duration | Focus | Status |
-|-------|----------|-------|--------|
-| 0 | 2 weeks | Foundation — monorepo, configs, database, UI | **Current** |
-| 1 | 6 weeks | Platform Core — auth, tenancy, billing, RBAC | Planned |
-| 2 | 8 weeks | Sell Funnel MVP — funnels, pages, conversions | Planned |
-| 3 | 4 weeks | Platform Hardening — AI gateway, notifications | Planned |
-| 4 | 8 weeks | Book Rocket MVP — author tools, SEO engine | Planned |
-| 5 | 8 weeks | Platform Maturity — scale, extensibility | Planned |
+| Phase | Duration | Focus                                          | Status      |
+| ----- | -------- | ---------------------------------------------- | ----------- |
+| 0     | 2 weeks  | Foundation — monorepo, configs, database, UI   | **Current** |
+| 1     | 6 weeks  | Platform Core — auth, tenancy, billing, RBAC   | Planned     |
+| 2     | 8 weeks  | Sell Funnel MVP — funnels, pages, conversions  | Planned     |
+| 3     | 4 weeks  | Platform Hardening — AI gateway, notifications | Planned     |
+| 4     | 8 weeks  | Book Rocket MVP — author tools, SEO engine     | Planned     |
+| 5     | 8 weeks  | Platform Maturity — scale, extensibility       | Planned     |

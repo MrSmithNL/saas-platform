@@ -26,6 +26,7 @@ export const baseConfig = [
       "**/prisma/migrations/**",
       "**/next-env.d.ts",
       "site/**",
+      "tooling/generators/**",
       "*.config.{ts,js,mjs}",
     ],
   },
