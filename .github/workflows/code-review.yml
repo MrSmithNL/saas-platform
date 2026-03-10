@@ -110,6 +110,72 @@ jobs:
           # Complexity warnings don't fail the build — they're informational
           exit 0
 
+  ai-antipatterns:
+    name: AI Anti-Pattern Detection
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for AI anti-patterns
+        run: |
+          #!/bin/bash
+          set -euo pipefail
+          WARNINGS=0
+
+          echo "## AI Anti-Pattern Detection"
+          echo ""
+
+          # Find all TS files (exclude node_modules, dist, .next, generated)
+          TS_FILES=$(find . -name '*.ts' -o -name '*.tsx' | grep -v node_modules | grep -v dist | grep -v '.next' | grep -v '.d.ts')
+
+          # 1. Excessive comments ratio
+          TOTAL_LINES=$(echo "$TS_FILES" | xargs cat 2>/dev/null | wc -l || echo 0)
+          COMMENT_LINES=$(echo "$TS_FILES" | xargs cat 2>/dev/null | grep -cE '^\s*(//|/\*|\*)' || true)
+          if [ "$TOTAL_LINES" -gt 0 ]; then
+            RATIO=$((COMMENT_LINES * 100 / TOTAL_LINES))
+            echo "Comment ratio: ${RATIO}% (${COMMENT_LINES}/${TOTAL_LINES} lines)"
+            if [ "$RATIO" -gt 30 ]; then
+              echo "::warning::Comment ratio ${RATIO}% exceeds 30% — check for excessive WHAT comments"
+              WARNINGS=$((WARNINGS + 1))
+            fi
+          fi
+
+          # 2. Phantom error handling: empty catch blocks
+          EMPTY_CATCH=$(echo "$TS_FILES" | xargs grep -ln 'catch.*{[[:space:]]*}' 2>/dev/null | wc -l || true)
+          if [ "$EMPTY_CATCH" -gt 2 ]; then
+            echo "::warning::Found ${EMPTY_CATCH} files with empty catch blocks — check for phantom error handling"
+            WARNINGS=$((WARNINGS + 1))
+          fi
+
+          # 3. any type usage (type safety drift)
+          ANY_COUNT=$(echo "$TS_FILES" | xargs grep -c ': any\b\|as any\b' 2>/dev/null | awk -F: '{s+=$NF} END {print s+0}')
+          if [ "$ANY_COUNT" -gt 5 ]; then
+            echo "::warning::Found ${ANY_COUNT} uses of 'any' type — replace with proper types"
+            WARNINGS=$((WARNINGS + 1))
+          fi
+
+          # 4. Console.log left in code
+          CONSOLE_LOGS=$(echo "$TS_FILES" | xargs grep -c 'console\.\(log\|debug\|info\)' 2>/dev/null | awk -F: '{s+=$NF} END {print s+0}')
+          if [ "$CONSOLE_LOGS" -gt 3 ]; then
+            echo "::warning::Found ${CONSOLE_LOGS} console.log/debug/info calls — use proper logger"
+            WARNINGS=$((WARNINGS + 1))
+          fi
+
+          # 5. TODO/FIXME/HACK accumulation
+          TODOS=$(echo "$TS_FILES" | xargs grep -c 'TODO\|FIXME\|HACK\|XXX' 2>/dev/null | awk -F: '{s+=$NF} END {print s+0}')
+          if [ "$TODOS" -gt 10 ]; then
+            echo "::warning::Found ${TODOS} TODO/FIXME/HACK markers — review for stale items"
+            WARNINGS=$((WARNINGS + 1))
+          fi
+
+          echo ""
+          if [ "$WARNINGS" -gt 0 ]; then
+            echo "Found ${WARNINGS} potential AI anti-pattern(s) — review recommended"
+          else
+            echo "No AI anti-patterns detected"
+          fi
+
   duplication:
     name: Duplication Check
     runs-on: ubuntu-latest
