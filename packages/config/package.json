@@ -6,5 +6,8 @@
     "./eslint": "./eslint/index.js",
     "./typescript": "./typescript/base.json",
     "./tailwind": "./tailwind/index.ts"
+  },
+  "scripts": {
+    "lint": "echo 'config: no source to lint'"
   }
 }

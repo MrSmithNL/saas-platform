@@ -29,10 +29,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: pnpm lint || echo "Lint had errors — expected during Phase 0 setup"
+        run: pnpm lint
 
-      - name: Type check
-        run: pnpm build || echo "Build had errors — expected during Phase 0 setup"
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Type check & Build
+        run: pnpm build
 
       - name: Test
-        run: pnpm test || echo "Tests had errors — expected during Phase 0 setup"
+        run: pnpm test
