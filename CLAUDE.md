@@ -1,5 +1,12 @@
 # Project Instructions — SaaS Platform (PROD-004)
 
+<!-- project-classification
+type: product
+work_nature: software-development
+hierarchy_position: product
+enforcement_profile: full
+-->
+
 These instructions apply to this project in every session.
 
 ---
