@@ -1,7 +1,7 @@
 # Architecture Decision Records — SaaS Platform (PROD-004)
 
 > Last updated: 2026-03-10
-> Total ADRs: 18 + Technology Validation summary
+> Total ADRs: 19 + Technology Validation summary
 
 ## ADR-001: Modular Monolith Over Microservices
 
@@ -359,3 +359,77 @@ Before starting Phase 1 implementation, every major technology choice was challe
 | Turso                    | If edge data or database-per-tenant isolation is needed |
 | Jotai                    | If Zustand proves insufficient for complex editor state |
 | TanStack Form            | If form complexity exceeds React Hook Form capabilities |
+
+---
+
+## ADR-019: Monorepo Internal Packages as the Reusable Platform Core
+
+**Date:** 2026-03-10
+**Status:** Accepted
+**Context:** The SaaS platform serves multiple verticals (SellFunnel, AISOGEN, Book Rocket). Improvements to the shared core must automatically flow to all verticals — like how WordPress core updates flow to all WordPress sites. Eight approaches were evaluated (GitHub templates, git forks, published npm packages, CLI scaffolds, multi-repo, Nx generators, and two monorepo variants).
+**Decision:** Use the Turborepo monorepo with internal packages as the reusable platform core. The `packages/` directory IS the "mother template." Verticals are apps in `apps/` that import shared packages via `workspace:*`. No separate repos, no forks, no publishing.
+**Rationale:**
+
+- **Instant propagation**: Change a shared package → every vertical gets it in the same commit. No version bumps, no merging, no drift
+- **Atomic cross-cutting changes**: A single PR can update shared code AND all consumers simultaneously — impossible with forks or multi-repo
+- **Zero publishing overhead**: Internal packages are resolved at workspace level, not from npm. No Changesets needed until external consumers exist
+- **Validated by industry**: Shopify (modular monolith, 2.8M lines), Google (95% of code in single monorepo), Vercel's next-forge template (exact same Turborepo + pnpm pattern)
+- **Best Turborepo compatibility**: This is the pattern Turborepo was designed for. Vercel deploys each app independently from the monorepo
+- **Scales to 10-15 verticals**: Beyond that, extract stable packages to npm. Turborepo caching and task parallelisation handle build times
+- Alternatives rejected: GitHub Template Repos (no upstream sync mechanism), Git Forks (5+ manual merges per release — unsustainable), Published npm (unnecessary overhead for internal use), CLI Scaffolds (one-time only, no ongoing sync), Multi-repo (version drift, no atomic changes), Nx (migration cost not justified)
+  **Research:** `research/saas-mother-template-approaches.md` (50+ sources)
+  **Consequences:** Must enforce five design principles: (1) Shared packages are configuration-driven — verticals pass config, never modify shared code. (2) Verticals only ADD, never MODIFY shared packages — wrap, extend, or configure instead. (3) Use composition pattern — shared packages export primitives, verticals compose them. (4) Start Just-in-Time compilation, graduate to Compiled when builds slow. (5) Enforce boundaries — ESLint rules prevent verticals importing from each other or reaching into package internals.
+
+### Architecture Pattern
+
+```
+saas-platform/
+├── packages/                    ← THE "MOTHER" — shared platform core
+│   ├── ui/                      ← Design system (shadcn + custom)
+│   ├── database/                ← Drizzle schemas + RLS + migrations
+│   ├── core/                    ← Auth, tenancy, billing, RBAC, API
+│   ├── ai-gateway/              ← LLM provider routing + observability
+│   ├── feature-flags/           ← PostHog wrapper
+│   ├── notifications/           ← Resend + Knock wrapper
+│   ├── config/                  ← Shared TS, ESLint, Tailwind configs
+│   └── utils/                   ← Shared utilities and types
+├── apps/                        ← VERTICALS — consume shared packages
+│   ├── sell-funnel/             ← Vertical: SellFunnel
+│   ├── aisogen/                 ← Vertical: AISOGEN (SEO/AISO)
+│   ├── book-rocket/             ← Vertical: Book Rocket
+│   ├── admin/                   ← Internal admin panel
+│   └── marketing/               ← Marketing site
+```
+
+### Vertical Configuration Pattern
+
+Each vertical provides a config object to shared packages — this is how verticals customise without modifying shared code:
+
+```typescript
+// apps/sell-funnel/config/platform.ts
+export const platformConfig = {
+  vertical: "sell-funnel",
+  name: "SellFunnel",
+  theme: { primary: "#2563eb", accent: "#f59e0b" },
+  features: { aiCopywriting: true, abTesting: true, funnelBuilder: true },
+  billing: { plans: ["starter", "pro", "enterprise"] },
+  routes: { dashboard: "/dashboard", onboarding: "/get-started" },
+};
+```
+
+### Boundary Enforcement Rules
+
+1. Verticals NEVER import from other verticals (`apps/sell-funnel` cannot import from `apps/aisogen`)
+2. Verticals NEVER import internal files from packages (only public `exports` in package.json)
+3. Packages NEVER import from verticals (dependency flows one way: apps → packages)
+4. Shared packages accept configuration, not hard-coded vertical-specific logic
+
+### Evolution Triggers
+
+| Trigger                            | Action                                            |
+| ---------------------------------- | ------------------------------------------------- |
+| Build times exceed 5 minutes       | Move heavy packages from Just-in-Time to Compiled |
+| External customers want components | Add Changesets, publish to npm                    |
+| Team grows to 5+ developers        | Add CODEOWNERS per package                        |
+| 15+ verticals                      | Extract stable packages to npm                    |
+| White-label the platform           | Add CLI scaffold for initial vertical setup       |

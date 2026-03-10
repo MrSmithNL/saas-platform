@@ -6,6 +6,18 @@
 
 Multi-tenant AI SaaS platform built as a modular monolith in a Turborepo monorepo. Serves multiple vertical products (Sell Funnel, AISOGEN, Book Rocket) from shared infrastructure. Every tenant's data is isolated via PostgreSQL Row-Level Security (RLS) with policies defined directly in the Drizzle ORM schema.
 
+### Reusable Platform Core (ADR-019)
+
+The `packages/` directory is the reusable "mother" platform. Verticals in `apps/` consume shared packages via `workspace:*` — changes to any shared package are instantly available to all verticals in the same commit. No forking, no publishing, no version drift.
+
+**Design principles:**
+
+1. Shared packages are **configuration-driven** — verticals pass config objects, never modify shared code
+2. Verticals only **ADD**, never **MODIFY** shared packages — wrap, extend, or configure instead
+3. **Composition pattern** — shared packages export primitives, verticals compose them into pages
+4. Dependencies flow **one way only**: `apps/` → `packages/` (never reversed, never between verticals)
+5. **Boundary enforcement** via ESLint rules prevents cross-vertical imports and package internal access
+
 ## Architecture Diagram
 
 ```
@@ -155,7 +167,8 @@ Browser → Vercel Edge
 
 ## Change Log
 
-| Date       | Change                                                                                                                                                                                                          |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-03-09 | Initial architecture — monorepo structure, 4-layer design, tech stack                                                                                                                                           |
-| 2026-03-10 | Phase 0 complete. Major tech updates: Prisma→Drizzle, add Neon, add tRPC+Hono, add Trigger.dev/PostHog/Langfuse/Knock. Full architecture plan created from 4 research reports (100+ sources). Diagrams updated. |
+| Date       | Change                                                                                                                                                                                                               |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-03-09 | Initial architecture — monorepo structure, 4-layer design, tech stack                                                                                                                                                |
+| 2026-03-10 | Phase 0 complete. Major tech updates: Prisma→Drizzle, add Neon, add tRPC+Hono, add Trigger.dev/PostHog/Langfuse/Knock. Full architecture plan created from 4 research reports (100+ sources). Diagrams updated.      |
+| 2026-03-10 | ADR-019: Reusable platform core architecture. packages/ = mother template, apps/ = verticals. Configuration-driven design, composition pattern, boundary enforcement. Research: 50+ sources, 8 approaches evaluated. |
