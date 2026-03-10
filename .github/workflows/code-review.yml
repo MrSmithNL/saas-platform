@@ -1,0 +1,291 @@
+name: Code Review
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: code-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  complexity:
+    name: Complexity Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check code complexity
+        run: |
+          #!/bin/bash
+          set -euo pipefail
+
+          WARNINGS=0
+          ERRORS_FILE=$(mktemp)
+
+          echo "## Code Complexity Report" > "$ERRORS_FILE"
+          echo "" >> "$ERRORS_FILE"
+
+          # Find all TypeScript files (exclude node_modules, dist, .next, generated)
+          while IFS= read -r -d '' file; do
+            line_count=$(wc -l < "$file")
+            relative=$(echo "$file" | sed 's|^\./||')
+
+            # Check file length
+            if [ "$line_count" -gt 400 ]; then
+              echo "::warning file=${relative}::File has ${line_count} lines (max 400)"
+              echo "- **${relative}**: ${line_count} lines (max 400)" >> "$ERRORS_FILE"
+              WARNINGS=$((WARNINGS + 1))
+            fi
+
+            # Check function length (functions/methods longer than 30 lines)
+            # Match: function, arrow functions assigned to const/let/var, class methods
+            awk '
+              /^[[:space:]]*(export[[:space:]]+)?(async[[:space:]]+)?function[[:space:]]+/ ||
+              /^[[:space:]]*(export[[:space:]]+)?(const|let|var)[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*=[[:space:]]*(async[[:space:]]*)?\(/ ||
+              /^[[:space:]]*(public|private|protected|static|async|readonly)[[:space:]]+(async[[:space:]]+)?[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*\(/ {
+                if (func_start > 0 && func_lines > 30) {
+                  printf "%s:%d: function \"%s\" is %d lines (max 30)\n", FILENAME, func_start, func_name, func_lines
+                }
+                func_start = NR
+                func_name = $0
+                gsub(/^[[:space:]]+/, "", func_name)
+                sub(/\(.*/, "", func_name)
+                sub(/.* /, "", func_name)
+                func_lines = 0
+                brace_depth = 0
+              }
+              /{/ { brace_depth++ }
+              /}/ { brace_depth-- }
+              func_start > 0 { func_lines++ }
+              func_start > 0 && brace_depth <= 0 && func_lines > 1 {
+                if (func_lines > 30) {
+                  printf "%s:%d: function \"%s\" is %d lines (max 30)\n", FILENAME, func_start, func_name, func_lines
+                }
+                func_start = 0
+                func_lines = 0
+              }
+            ' "$file" | while IFS= read -r warning; do
+              file_ref=$(echo "$warning" | cut -d: -f1-2)
+              msg=$(echo "$warning" | cut -d: -f3-)
+              echo "::warning file=${file_ref}::${msg}"
+              echo "- **${warning}**" >> "$ERRORS_FILE"
+              WARNINGS=$((WARNINGS + 1))
+            done
+
+            # Check nesting depth (>3 levels of braces/indentation)
+            awk '
+              {
+                # Count leading spaces/tabs to estimate nesting
+                match($0, /^[[:space:]]*/)
+                indent = RLENGTH
+                # Rough: 2 spaces = 1 level, 4 spaces = 1 level (handle both)
+                # Use brace counting instead
+              }
+              /{/ { depth++ }
+              /}/ { depth-- }
+              depth > 4 && /[^[:space:]]/ && !/^\s*[\/*]/ && !/^\s*\*/ {
+                if (!warned[FILENAME":"NR]) {
+                  printf "%s:%d: nesting depth %d (max 3 logical levels)\n", FILENAME, NR, depth - 1
+                  warned[FILENAME":"NR] = 1
+                  count++
+                }
+              }
+              count > 5 { exit }
+            ' "$file" | head -5 | while IFS= read -r warning; do
+              file_ref=$(echo "$warning" | cut -d: -f1-2)
+              msg=$(echo "$warning" | cut -d: -f3-)
+              echo "::warning file=${file_ref}::${msg}"
+              WARNINGS=$((WARNINGS + 1))
+            done
+
+          done < <(find . -name '*.ts' -o -name '*.tsx' | grep -v node_modules | grep -v dist | grep -v '.next' | grep -v '.d.ts' | sort -z | tr '\n' '\0')
+
+          echo ""
+          echo "Complexity check complete."
+          cat "$ERRORS_FILE"
+          rm -f "$ERRORS_FILE"
+
+          # Complexity warnings don't fail the build — they're informational
+          exit 0
+
+  duplication:
+    name: Duplication Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install jscpd
+        run: npm install -g jscpd
+
+      - name: Run duplicate code detection
+        run: |
+          jscpd \
+            --pattern "**/*.{ts,tsx}" \
+            --ignore "node_modules,dist,.next,**/*.d.ts,**/*.config.*" \
+            --min-lines 10 \
+            --min-tokens 50 \
+            --threshold 5 \
+            --reporters "console" \
+            --output jscpd-report \
+            .
+
+      - name: Upload duplication report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jscpd-report
+          path: jscpd-report/
+          retention-days: 14
+
+  architecture:
+    name: Architecture Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint with boundaries plugin
+        run: pnpm lint
+
+      - name: Check architecture boundaries
+        run: |
+          #!/bin/bash
+          set -euo pipefail
+
+          VIOLATIONS=0
+
+          echo "## Architecture Boundary Check"
+          echo ""
+
+          # Rule 1: packages/ must not import from apps/
+          echo "Checking: packages must not import from apps..."
+          if grep -rn "from ['\"]@saas-platform/sell-funnel\|from ['\"]@saas-platform/admin\|from ['\"]@saas-platform/marketing" packages/ 2>/dev/null; then
+            echo "::error::Packages must not import from apps — this violates the layer architecture"
+            VIOLATIONS=$((VIOLATIONS + 1))
+          else
+            echo "  OK — no packages importing from apps"
+          fi
+
+          # Rule 2: Foundation layer (utils, config) must not import from Core (core, database)
+          echo "Checking: foundation packages must not import from core..."
+          for pkg in utils config; do
+            if [ -d "packages/$pkg" ]; then
+              if grep -rn "from ['\"]@saas-platform/core\|from ['\"]@saas-platform/database\|from ['\"]@saas-platform/ai-gateway\|from ['\"]@saas-platform/notifications\|from ['\"]@saas-platform/feature-flags" "packages/$pkg/src/" 2>/dev/null; then
+                echo "::error::packages/$pkg must not import from core/service layer packages"
+                VIOLATIONS=$((VIOLATIONS + 1))
+              fi
+            fi
+          done
+          echo "  OK — foundation layer boundaries respected"
+
+          # Rule 3: Check for circular dependencies using TypeScript project references
+          echo "Checking: no circular package.json dependencies..."
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const pkgDirs = fs.readdirSync('packages').filter(d =>
+              fs.statSync(path.join('packages', d)).isDirectory()
+            );
+            const appDirs = fs.readdirSync('apps').filter(d =>
+              fs.statSync(path.join('apps', d)).isDirectory()
+            );
+
+            const graph = {};
+            [...pkgDirs.map(d => ({dir: 'packages/' + d, name: d})),
+             ...appDirs.map(d => ({dir: 'apps/' + d, name: d}))
+            ].forEach(({dir, name}) => {
+              try {
+                const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
+                const deps = {...(pkg.dependencies || {}), ...(pkg.devDependencies || {})};
+                graph[name] = Object.keys(deps)
+                  .filter(d => d.startsWith('@saas-platform/'))
+                  .map(d => d.replace('@saas-platform/', ''));
+              } catch(e) { /* skip */ }
+            });
+
+            // Simple cycle detection with DFS
+            function hasCycle(node, visited = new Set(), stack = new Set()) {
+              visited.add(node);
+              stack.add(node);
+              for (const dep of (graph[node] || [])) {
+                if (!visited.has(dep)) {
+                  if (hasCycle(dep, visited, stack)) return true;
+                } else if (stack.has(dep)) {
+                  console.error('Circular dependency: ' + node + ' <-> ' + dep);
+                  return true;
+                }
+              }
+              stack.delete(node);
+              return false;
+            }
+
+            let cycles = false;
+            for (const node of Object.keys(graph)) {
+              if (hasCycle(node, new Set(), new Set())) { cycles = true; }
+            }
+            if (cycles) process.exit(1);
+            console.log('  OK — no circular dependencies detected');
+          "
+          if [ $? -ne 0 ]; then
+            VIOLATIONS=$((VIOLATIONS + 1))
+          fi
+
+          echo ""
+          if [ "$VIOLATIONS" -gt 0 ]; then
+            echo "Found ${VIOLATIONS} architecture violation(s)"
+            exit 1
+          else
+            echo "All architecture checks passed"
+          fi
+
+  coverage:
+    name: Coverage Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests with coverage
+        run: pnpm vitest run --coverage
+
+      - name: Check coverage thresholds
+        run: |
+          echo "Coverage thresholds are enforced by vitest.config.ts:"
+          echo "  - Lines: 80%"
+          echo "  - Branches: 70%"
+          echo "If the previous step passed, coverage gates are met."
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
