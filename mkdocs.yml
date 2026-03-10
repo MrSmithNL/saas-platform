@@ -1,4 +1,4 @@
-site_name: "SaaS Platform (PROD-002)"
+site_name: "SaaS Platform (PROD-004)"
 site_url: https://mrsmithnl.github.io/saas-platform/
 docs_dir: docs
 
@@ -57,5 +57,6 @@ nav:
   - Processes & Flows: processes-and-flows.md
   - Decisions Log: decisions-log.md
   - Accounts & Access: accounts-and-access.md
+  - Technical Architecture Plan: technical-architecture-plan.md
   - Security Risk Log: security-risk-log.md
   - Todo: todo.md

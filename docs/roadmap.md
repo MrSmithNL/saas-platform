@@ -5,48 +5,58 @@
 
 ## Phase Overview
 
-| Phase | Duration | Focus | Key Validation | Status |
-|-------|----------|-------|----------------|--------|
-| 0 | 2 weeks | Foundation — monorepo, configs, database, UI | `pnpm dev` starts everything | **Current** |
-| 1 | 6 weeks | Platform Core — auth, tenancy, billing, RBAC | User can sign up, create org, subscribe | Planned |
-| 2 | 8 weeks | Sell Funnel MVP — funnels, pages, conversions | First paying customers | Planned |
-| 3 | 4 weeks | Platform Hardening — AI gateway, notifications | Ready for second vertical | Planned |
-| 4 | 8 weeks | Book Rocket MVP — author tools, SEO engine | Platform reusability proven | Planned |
-| 5 | 8 weeks | Platform Maturity — scale, extensibility | Production-grade platform | Planned |
+| Phase | Duration | Focus                                          | Key Validation                          | Status       |
+| ----- | -------- | ---------------------------------------------- | --------------------------------------- | ------------ |
+| 0     | 2 weeks  | Foundation — monorepo, configs, database, UI   | `pnpm dev` starts everything            | **Complete** |
+| 1     | 6 weeks  | Platform Core — auth, tenancy, billing, RBAC   | User can sign up, create org, subscribe | **Next**     |
+| 2     | 8 weeks  | Sell Funnel MVP — funnels, pages, conversions  | First paying customers                  | Planned      |
+| 3     | 4 weeks  | Platform Hardening — AI gateway, notifications | Ready for second vertical               | Planned      |
+| 4     | 8 weeks  | Book Rocket MVP — author tools, SEO engine     | Platform reusability proven             | Planned      |
+| 5     | 8 weeks  | Platform Maturity — scale, extensibility       | Production-grade platform               | Planned      |
 
 **Total estimated timeline:** ~36 weeks (9 months)
 
-## Phase 0: Foundation (Current)
+## Phase 0: Foundation (COMPLETE)
 
 **Appetite:** 2 weeks
-**Deliverable:** Empty but functional monorepo where `pnpm dev` starts everything
+**Deliverable:** Functional monorepo where `pnpm dev` starts everything
+**Completed:** 2026-03-10
 
-| Item | Priority | Status |
-|------|----------|--------|
-| Monorepo structure (Turborepo + pnpm) | Critical | Done |
-| Package stubs with proper exports | Critical | Done |
-| Prisma schema (base models) | Critical | Done |
-| Shared configs (TS, ESLint, Tailwind) | High | Todo |
-| shadcn/ui component library setup | High | Todo |
-| Docker Compose for local dev | High | Todo |
-| GitHub Actions CI | Medium | Todo |
-| ADRs for key decisions | Medium | Partial |
+| Item                                  | Priority | Status |
+| ------------------------------------- | -------- | ------ |
+| Monorepo structure (Turborepo + pnpm) | Critical | Done   |
+| Package stubs with proper exports     | Critical | Done   |
+| Shared configs (TS, ESLint, Tailwind) | Critical | Done   |
+| shadcn/ui component library setup     | High     | Done   |
+| Pre-commit hooks (ESLint + Prettier)  | High     | Done   |
+| Pre-push hooks (build + test)         | High     | Done   |
+| Code quality gates (complexity, etc.) | High     | Done   |
+| Vitest + passWithNoTests              | High     | Done   |
+| 3 apps scaffolded (SF, admin, mkt)    | Medium   | Done   |
+| Technical architecture plan           | Critical | Done   |
 
-## Phase 1: Platform Core MVP
+## Phase 1: Platform Core MVP (NEXT)
 
 **Appetite:** 6 weeks
 **Deliverable:** Working platform where a user can sign up, create an organisation, invite team members, and subscribe to a plan
 
-| Item | Priority |
-|------|----------|
-| Clerk multi-tenant auth integration | Critical |
-| Tenant context middleware | Critical |
-| PostgreSQL RLS policies | Critical |
-| Stripe subscriptions + webhooks | Critical |
-| RBAC (Owner, Admin, Member) | High |
-| API framework with rate limiting | High |
-| Basic admin dashboard | Medium |
-| Config-based feature flags | Medium |
+| Item                                      | Priority | Tech                  |
+| ----------------------------------------- | -------- | --------------------- |
+| Switch Prisma → Drizzle ORM               | Critical | Drizzle + drizzle-kit |
+| Set up Neon serverless PostgreSQL         | Critical | Neon (free tier)      |
+| Define tables with RLS policies in schema | Critical | Drizzle pgPolicy()    |
+| Clerk auth + Organizations integration    | Critical | Clerk SDK             |
+| Tenant context middleware                 | Critical | Hono middleware       |
+| tRPC + Hono.js API layer                  | Critical | tRPC + Hono           |
+| Stripe billing + webhooks                 | Critical | Stripe SDK            |
+| Trigger.dev background jobs               | High     | Trigger.dev v4        |
+| RBAC (Owner, Admin, Member)               | High     | Clerk + custom        |
+| Upstash Redis cache + rate limiting       | High     | Upstash + @upstash/rl |
+| PostHog feature flags + analytics         | Medium   | PostHog SDK           |
+| Sentry + Pino + BetterStack monitoring    | Medium   | Sentry + Pino         |
+| Tailwind v4 upgrade + tenant theming      | Medium   | Tailwind CSS v4       |
+| Storybook 9 + nuqs                        | Medium   | Storybook + nuqs      |
+| RLS isolation tests                       | Critical | Vitest                |
 
 ## Phase 2: Sell Funnel MVP
 
@@ -54,12 +64,14 @@
 **Deliverable:** Minimum lovable Sell Funnel product with paying customers
 
 **Cycle 2a (Weeks 9-12):**
+
 - Sell Funnel data models
 - Funnel builder UI
 - Landing page templates
 - Dashboard with key metrics
 
 **Cycle 2b (Weeks 13-16):**
+
 - Conversion tracking & analytics
 - A/B testing framework
 - AI-powered copy generation
@@ -78,35 +90,35 @@
 - Monitoring & observability
 - Security audit
 
-## Phase 4: Book Rocket MVP
+## Phase 4: AISOGEN MVP
 
 **Appetite:** 8 weeks
-**Deliverable:** Book Rocket proving platform reusability
+**Deliverable:** AISOGEN proving platform reusability for second vertical
 
-- Author profile management
-- Book listing and SEO analysis
-- Content creation tools
-- Marketing campaign management
-- Integration with SEO Toolkit (PROD-001)
+- SEO audit engine integration (PROD-001)
+- Content pipeline
+- Rank tracking + reporting
+- AISO capabilities
+- Marketing site for aisogen.ai
 
-## Phase 5: Platform Maturity
+## Phase 5: Book Rocket + Platform Maturity
 
 **Appetite:** 8 weeks
-**Deliverable:** Production-grade platform with extensibility
+**Deliverable:** Third vertical + production-grade platform
 
+- Book Rocket vertical (author tools, SEO engine)
 - API marketplace / extensibility
 - Custom domains, white-labelling
-- Usage-based billing
-- Advanced AI features
+- Usage-based billing (Stripe meters)
 - Plugin/extension system
 - Developer documentation portal
 
 ## Backlog (Future)
 
-| Item | Category | Priority |
-|------|----------|----------|
-| Third vertical product | Product | Low |
-| Mobile app (React Native) | Product | Low |
-| Partner/affiliate system | Business | Low |
-| Enterprise SSO (SAML) | Platform | Low |
-| Multi-region deployment | Infrastructure | Low |
+| Item                      | Category       | Priority |
+| ------------------------- | -------------- | -------- |
+| Third vertical product    | Product        | Low      |
+| Mobile app (React Native) | Product        | Low      |
+| Partner/affiliate system  | Business       | Low      |
+| Enterprise SSO (SAML)     | Platform       | Low      |
+| Multi-region deployment   | Infrastructure | Low      |
