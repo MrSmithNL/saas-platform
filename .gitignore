@@ -29,6 +29,9 @@ Thumbs.db
 
 # Testing
 coverage/
+.stryker-incremental.json
+.stryker-tmp/
+reports/mutation/
 
 # Database
 *.db

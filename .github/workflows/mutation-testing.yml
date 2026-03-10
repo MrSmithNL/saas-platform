@@ -1,0 +1,107 @@
+name: Mutation Testing
+
+on:
+  schedule:
+    - cron: "0 3 * * 3" # Wednesday 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mutation-test:
+    name: Stryker Mutation Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Stryker
+        run: pnpm add -D -w @stryker-mutator/core @stryker-mutator/vitest-runner @stryker-mutator/typescript-checker
+
+      - name: Run Stryker mutation testing
+        run: pnpm test:mutation
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: reports/mutation/
+          retention-days: 30
+
+      - name: Update mutation metrics
+        if: success()
+        run: |
+          REPORT_FILE="reports/mutation/mutation-report.json"
+          METRICS_FILE="docs/mutation-metrics.md"
+
+          if [ ! -f "$REPORT_FILE" ]; then
+            echo "No mutation report found, skipping metrics update"
+            exit 0
+          fi
+
+          # Extract scores from Stryker JSON report
+          SCORE=$(node -e "
+            const r = require('./$REPORT_FILE');
+            const f = r.files || {};
+            let killed=0, survived=0, total=0;
+            for (const file of Object.values(f)) {
+              for (const m of (file.mutants || [])) {
+                total++;
+                if (m.status === 'Killed') killed++;
+                if (m.status === 'Survived') survived++;
+              }
+            }
+            const score = total > 0 ? ((killed / total) * 100).toFixed(1) : '0.0';
+            console.log(score + '|' + killed + '|' + survived + '|' + total);
+          ")
+
+          MUTATION_SCORE=$(echo "$SCORE" | cut -d'|' -f1)
+          KILLED=$(echo "$SCORE" | cut -d'|' -f2)
+          SURVIVED=$(echo "$SCORE" | cut -d'|' -f3)
+          TOTAL=$(echo "$SCORE" | cut -d'|' -f4)
+          TODAY=$(date -u +%Y-%m-%d)
+
+          # Create metrics file with header if it does not exist
+          if [ ! -f "$METRICS_FILE" ]; then
+            cat > "$METRICS_FILE" << 'HEADER'
+          # Mutation Testing Metrics
+
+          Tracked by Stryker mutation testing. Updated automatically by CI.
+
+          | Date | Mutation Score | Mutants Killed | Mutants Survived | Mutants Total |
+          |------|---------------|----------------|------------------|---------------|
+          HEADER
+            # Remove leading whitespace from heredoc
+            sed -i 's/^          //' "$METRICS_FILE"
+          fi
+
+          # Append today's row
+          echo "| $TODAY | ${MUTATION_SCORE}% | $KILLED | $SURVIVED | $TOTAL |" >> "$METRICS_FILE"
+
+      - name: Commit metrics
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/mutation-metrics.md
+          git diff --cached --quiet || git commit -m "Update mutation testing metrics [skip ci]"
+          git push
