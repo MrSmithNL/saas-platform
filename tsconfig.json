@@ -1,0 +1,24 @@
+{
+  "extends": "./packages/config/typescript/base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@saas-platform/*": ["packages/*/src"]
+    }
+  },
+  "include": [],
+  "references": [
+    { "path": "packages/utils" },
+    { "path": "packages/database" },
+    { "path": "packages/ui" },
+    { "path": "packages/config" },
+    { "path": "packages/core" },
+    { "path": "packages/api-client" },
+    { "path": "packages/ai-gateway" },
+    { "path": "packages/notifications" },
+    { "path": "packages/feature-flags" },
+    { "path": "apps/sell-funnel" },
+    { "path": "apps/marketing" },
+    { "path": "apps/admin" }
+  ]
+}

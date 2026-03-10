@@ -106,6 +106,9 @@ export default {
     doNotFollow: {
       path: "node_modules",
     },
+    exclude: {
+      path: ["\\.(next|turbo)/", "\\.d\\.ts$", "dist/"],
+    },
     tsPreCompilationDeps: true,
     tsConfig: {
       fileName: "tsconfig.json",

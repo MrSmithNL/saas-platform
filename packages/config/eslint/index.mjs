@@ -27,6 +27,7 @@ export const baseConfig = [
       "**/next-env.d.ts",
       "site/**",
       "tooling/generators/**",
+      "tooling/scripts/**",
       "*.config.{ts,js,mjs}",
     ],
   },
