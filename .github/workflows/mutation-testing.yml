@@ -33,9 +33,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Stryker
-        run: pnpm add -D -w @stryker-mutator/core @stryker-mutator/vitest-runner @stryker-mutator/typescript-checker
-
       - name: Run Stryker mutation testing
         run: pnpm test:mutation
 

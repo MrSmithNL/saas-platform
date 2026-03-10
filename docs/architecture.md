@@ -165,6 +165,45 @@ Browser → Vercel Edge
   → Response (only tenant_abc's data)
 ```
 
+## Monitoring & Observability
+
+### What's Monitored
+
+| Metric                           | Source                       | Dashboard Location  | Alert Threshold                  |
+| -------------------------------- | ---------------------------- | ------------------- | -------------------------------- |
+| OMTM: Foundation layers complete | Manual tracking              | Cockpit tab         | N/A (progress metric)            |
+| Build pass rate                  | GitHub Actions               | CI dashboard        | < 95% → P2                       |
+| Test coverage (core)             | Vitest + @vitest/coverage-v8 | CI artifacts        | < 85% → P2                       |
+| Mutation score                   | Stryker (weekly CI)          | mutation-metrics.md | < 60% → P3                       |
+| Dependency vulnerabilities       | Dependabot + CodeQL          | GitHub Security tab | Critical CVE > 7 days → P1       |
+| Architecture fitness             | pnpm test:arch (CI)          | PR checks           | Boundary violation → block merge |
+
+### Data Sources
+
+- Google Sheet tab: PROD-004 (to be added)
+- GA4 property: not set up (pre-launch)
+- Search Console: not set up (pre-launch)
+- UptimeRobot: not set up (pre-launch)
+- GitHub Actions: active (build, architecture, codeql, mutation-testing workflows)
+
+### Known Gaps
+
+- No runtime monitoring yet (pre-deployment)
+- No user-facing metrics (pre-launch)
+- Mutation testing baseline not yet established
+- No Sentry error tracking configured yet
+- No BetterStack logging configured yet
+
+### Runbook
+
+- **Build fails:** Check GitHub Actions logs → diagnose (test/lint/build/type) → fix → re-push
+- **Coverage drops below 85%:** Run `pnpm vitest run --coverage` → identify uncovered lines → add tests
+- **Mutation score drops:** Review `reports/mutation/mutation-report.html` → strengthen test assertions
+- **Architecture boundary violation:** Run `pnpm test:arch` → fix import direction → ensure apps/ → packages/ only
+- **Critical CVE:** Check Dependabot alert → patch dependency → verify tests pass → merge
+
+---
+
 ## Change Log
 
 | Date       | Change                                                                                                                                                                                                               |
