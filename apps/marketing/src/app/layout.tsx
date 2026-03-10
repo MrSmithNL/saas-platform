@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sell Funnel — AI-Powered Sales Funnels",
-  description:
-    "Build high-converting sales funnels with AI. Landing pages, conversion tracking, and A/B testing for any industry.",
+  title: "SaaS Platform",
+  description: "Build, launch, and grow your SaaS business",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

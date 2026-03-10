@@ -5,5 +5,9 @@
  * All UI components used across verticals live here.
  */
 
-// Components will be added as they're built
-export const UI_PACKAGE = "ui" as const;
+// Utilities
+export { cn } from "./lib/utils";
+
+// Primitives
+export { Button, buttonVariants } from "./primitives/button";
+export type { ButtonProps } from "./primitives/button";

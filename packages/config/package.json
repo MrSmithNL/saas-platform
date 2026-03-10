@@ -8,6 +8,6 @@
     "./tailwind": "./tailwind/index.ts"
   },
   "scripts": {
-    "lint": "echo 'config: no source to lint'"
+    "lint": "echo \"Lint via root eslint .\""
   }
 }

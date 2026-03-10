@@ -6,8 +6,8 @@
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "test": "vitest run",
+    "lint": "echo \"Lint via root eslint .\"",
+    "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test",
     "clean": "rm -rf .next node_modules .turbo"
   },

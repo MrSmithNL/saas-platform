@@ -6,7 +6,7 @@
     "dev": "next dev --port 3002",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "echo \"Lint via root eslint .\"",
     "clean": "rm -rf .next node_modules .turbo"
   },
   "dependencies": {

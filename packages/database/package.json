@@ -12,7 +12,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "lint": "eslint src/",
+    "lint": "echo \"Lint via root eslint .\"",
     "clean": "rm -rf dist node_modules .turbo"
   },
   "dependencies": {

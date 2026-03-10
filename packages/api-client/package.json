@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "lint": "eslint src/",
+    "lint": "echo \"Lint via root eslint .\"",
     "clean": "rm -rf dist node_modules .turbo"
   },
   "devDependencies": {

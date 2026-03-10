@@ -1,8 +1,8 @@
 # Todo — SaaS Platform (PROD-004)
 
-> Last updated: 2026-03-09
+> Last updated: 2026-03-10
 
-## Phase 0: Foundation (Current — Weeks 1-2)
+## Phase 0: Foundation — COMPLETE
 
 - [x] T-001: Create GitHub repo and monorepo structure
 - [x] T-002: Set up Turborepo + pnpm workspaces
@@ -10,29 +10,38 @@
 - [x] T-004: Set up Prisma schema (base models: User, Organisation, Subscription)
 - [x] T-005: Create project documentation (CLAUDE.md, README, all docs/)
 - [x] T-006: Register as PROD-004 in agency project registry
-- [ ] T-007: Configure shared TypeScript config (`packages/config/typescript/`)
-- [ ] T-008: Configure shared ESLint config (`packages/config/eslint/`)
-- [ ] T-009: Configure shared Tailwind config (`packages/config/tailwind/`)
-- [ ] T-010: Set up `packages/ui` with initial shadcn/ui components
-- [ ] T-011: Set up Docker Compose for local dev (PostgreSQL + Redis)
-- [ ] T-012: Configure GitHub Actions CI (lint, type-check, test)
-- [ ] T-013: Set up `apps/sell-funnel` as initial Next.js app
-- [ ] T-014: Verify `pnpm dev` starts all apps and packages
-- [ ] T-015: Write ADR-001: Modular monolith over microservices
-- [ ] T-016: Write ADR-002: Turborepo + pnpm over Nx
-- [ ] T-017: Write ADR-003: PostgreSQL + RLS over separate databases
-- [ ] T-018: Create architecture D2 diagram
+- [x] T-007: Configure shared TypeScript config (`packages/config/typescript/`)
+- [x] T-008: Configure shared ESLint config (`packages/config/eslint/`)
+- [x] T-009: Configure shared Tailwind config (`packages/config/tailwind/`)
+- [x] T-010: Set up `packages/ui` with initial shadcn/ui components (Button, cn utility)
+- [x] T-011: Set up Docker Compose for local dev (PostgreSQL + Redis)
+- [x] T-012: Configure GitHub Actions CI (lint, type-check, test, SAST, code review, mutation testing)
+- [x] T-013: Set up `apps/sell-funnel` as initial Next.js app
+- [x] T-014: Verify `pnpm dev` starts all apps and packages
+- [x] T-015: Write ADR-001: Modular monolith over microservices (in decisions-log.md)
+- [x] T-016: Write ADR-002: Turborepo + pnpm over Nx (in decisions-log.md)
+- [x] T-017: Write ADR-003: PostgreSQL + RLS over separate databases (in decisions-log.md)
+- [x] T-018: Create architecture D2 diagram (in docs/architecture.md)
+- [x] T-019: Scaffold admin and marketing apps with tsconfig and source files
+- [x] T-020: Harden pre-commit (lint-staged) and add pre-push (build + test) hooks
+- [x] T-021: Add agency standard ESLint rules (complexity ≤10, nesting ≤3, params ≤4, function length ≤30)
+- [x] T-022: Install knip for dead code detection (AI anti-pattern #9)
 
-## Phase 1: Platform Core MVP (Weeks 3-8)
+## Phase 1: Platform Core MVP (Next)
 
 - [ ] T-101: Integrate Clerk for multi-tenant auth
 - [ ] T-102: Implement tenant context middleware
 - [ ] T-103: Set up PostgreSQL RLS policies
 - [ ] T-104: Integrate Stripe for subscriptions
 - [ ] T-105: Implement RBAC (Owner, Admin, Member)
-- [ ] T-106: Build API framework with rate limiting
+- [ ] T-106: Build API framework with rate limiting, error handling, structured logging
 - [ ] T-107: Build basic admin dashboard
 - [ ] T-108: Implement config-based feature flags
+- [ ] T-109: Write multi-tenant isolation test suite (cross-tenant CRUD)
+- [ ] T-110: Implement error type hierarchy (AppError, ValidationError, NotFoundError, etc.)
+- [ ] T-111: Set up structured JSON logging (Pino) with request ID tracing
+- [ ] T-112: Implement tenant provisioning flow (Clerk webhook → DB seed)
+- [ ] T-113: Add health check endpoint (`GET /api/v1/health`)
 
 ## Phase 2: Sell Funnel MVP (Weeks 9-16)
 

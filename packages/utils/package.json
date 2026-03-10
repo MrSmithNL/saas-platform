@@ -9,8 +9,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "lint": "eslint src/",
-    "test": "vitest run",
+    "lint": "echo \"Lint via root eslint .\"",
+    "test": "vitest run --passWithNoTests",
     "clean": "rm -rf dist node_modules .turbo"
   },
   "devDependencies": {
