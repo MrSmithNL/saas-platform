@@ -1,6 +1,7 @@
 # Architecture Decision Records — SaaS Platform (PROD-004)
 
 > Last updated: 2026-03-10
+> Total ADRs: 18 + Technology Validation summary
 
 ## ADR-001: Modular Monolith Over Microservices
 
@@ -195,3 +196,166 @@
 - Per-tenant queue isolation and concurrency limits
   **Research:** `research/saas-platform-technical-architecture-2026.md`
   **Consequences:** Requires separate deployment target (not Vercel). Jobs must carry tenant context metadata.
+
+---
+
+## ADR-012: Vercel for Hosting & Deployment
+
+**Date:** 2026-03-10
+**Status:** Accepted
+**Context:** Need a hosting platform for multiple Next.js apps in a monorepo, with preview environments per PR and minimal DevOps overhead for a solo developer.
+**Decision:** Use Vercel for frontend app hosting.
+**Rationale:**
+
+- Purpose-built for Next.js (they build Next.js) — best DX and performance
+- Git push = deploy. Preview environments per PR with zero config
+- Edge functions for middleware (auth, rate limiting, tenant context)
+- Turborepo remote caching integration (free)
+- Free tier generous enough for development; Pro at $20/mo for production
+- Alternatives considered: Coolify (self-hosted, more DevOps), Railway (good but less Next.js-optimised), AWS Amplify (heavier setup)
+  **Research:** `research/saas-platform-technical-architecture-2026.md`
+  **Consequences:** Medium-High vendor lock-in. Mitigated by: (1) not using Vercel-specific APIs (`@vercel/og`, `@vercel/analytics`), (2) using Hono.js (portable) instead of Next.js API routes, (3) OpenNext project enables deployment on other platforms if needed. Watch pricing at scale — some teams report $10K+/month bills at high traffic.
+
+---
+
+## ADR-013: Stripe for Billing
+
+**Date:** 2026-03-10
+**Status:** Accepted
+**Context:** Need subscription billing with usage-based metering capability for a multi-tenant SaaS platform.
+**Decision:** Use Stripe for all billing and payment processing.
+**Rationale:**
+
+- Deepest API in the payments space — handles subscriptions, metered billing, invoicing, customer portal
+- Usage-based meters (via Metronome acquisition) — critical for per-tenant pricing models
+- Lowest processing fees among major providers (2.9% + 30¢)
+- Best webhook reliability and developer documentation
+- Alternatives considered: Lemon Squeezy (simpler but less flexible, higher fees), Paddle (better for international tax but less API control), RevenueCat (mobile-focused)
+  **Research:** `research/saas-platform-technical-architecture-2026.md`
+  **Consequences:** Medium lock-in. Mitigated by abstracting behind a billing service interface (`packages/core/billing`). Stripe fee at $10K MRR ≈ $320/mo.
+
+---
+
+## ADR-014: Upstash Redis for Caching & Rate Limiting
+
+**Date:** 2026-03-10
+**Status:** Accepted
+**Context:** Need serverless-compatible caching and per-tenant rate limiting without managing infrastructure.
+**Decision:** Use Upstash Redis for server-side caching and rate limiting.
+**Rationale:**
+
+- HTTP-based Redis — works in serverless/edge environments (no persistent TCP connections needed)
+- Scale-to-zero pricing (free tier: 500K commands/month)
+- `@upstash/ratelimit` library designed specifically for edge rate limiting
+- Tenant-prefixed cache keys (`tenant:{id}:cache_key`) for isolation
+- Standard Redis protocol — any Redis provider is a drop-in replacement
+- Alternatives considered: Vercel KV (Upstash under the hood but with markup), Momento (newer, less ecosystem), self-hosted Redis (operational overhead)
+  **Research:** `research/saas-platform-technical-architecture-2026.md`
+  **Consequences:** Low lock-in (standard Redis protocol). Monitor usage — free tier may be exceeded early if caching is aggressive.
+
+---
+
+## ADR-015: Resend for Email + Knock for Notifications
+
+**Date:** 2026-03-10
+**Status:** Accepted
+**Context:** Need transactional email (welcome, password reset, billing) and multi-channel notifications (in-app, email, push) with per-tenant preferences.
+**Decision:** Use Resend for transactional email and Knock for in-app/multi-channel notifications.
+**Rationale:**
+
+- **Resend:** React Email templates (write emails as React components), 3K emails/month free, modern DX, best deliverability tracking
+- **Knock:** Pre-built notification UI components, multi-channel routing (in-app + email + push), per-tenant notification preferences — saves months of building notification infrastructure
+- Two tools because they solve different problems: Resend = sending email, Knock = notification orchestration across channels
+- Alternatives considered: SendGrid (legacy DX, complex pricing), Novu (open source but less mature), building custom (massive effort for notifications)
+  **Research:** `research/saas-platform-technical-architecture-2026.md`
+  **Consequences:** Knock has medium lock-in — abstract behind notification service interface. Resend has low lock-in (standard SMTP fallback). Combined free tiers cover MVP needs.
+
+---
+
+## ADR-016: Sentry + Pino + BetterStack for Observability
+
+**Date:** 2026-03-10
+**Status:** Accepted
+**Context:** Need error tracking, structured logging, and production visibility for a multi-tenant platform.
+**Decision:** Use Sentry for error tracking, Pino for structured logging, and BetterStack for log aggregation and alerting.
+**Rationale:**
+
+- **Sentry:** Industry standard for error tracking, session replays for debugging, release tracking, Next.js integration. Free tier: 5K errors/month
+- **Pino:** Fastest Node.js logger (30% faster than Winston), structured JSON output, minimal overhead in production
+- **BetterStack:** Affordable log aggregation ($0 free tier), clean UI, alerting built in. Cheaper than Datadog by 10x at startup scale
+- Three tools because each is best-in-class for its specific job — Sentry for errors, Pino for generating logs, BetterStack for storing/searching/alerting on logs
+- Alternatives considered: Datadog (excellent but $50+/month minimum, designed for enterprise), LogRocket (session replay but no log aggregation), Axiom (good but less Next.js integration)
+  **Research:** `research/saas-platform-technical-architecture-2026.md`
+  **Consequences:** Low lock-in across all three (standard protocols, replaceable independently). Must add tenant_id to all log entries for per-tenant debugging.
+
+---
+
+## ADR-017: Vercel AI SDK + Langfuse for AI Integration
+
+**Date:** 2026-03-10
+**Status:** Accepted
+**Context:** Multiple verticals (Sell Funnel, AISOGEN) need AI/LLM capabilities — copy generation, content creation, SEO analysis. Need provider-agnostic AI integration with usage tracking.
+**Decision:** Use Vercel AI SDK for LLM integration and Langfuse for AI observability.
+**Rationale:**
+
+- **Vercel AI SDK:** Provider-agnostic — switch between OpenAI, Anthropic, Google, etc. with one-line change. Streaming UI support in ~20 lines of code. Designed for Next.js/React
+- **Langfuse:** Open-source LLM observability — tracks token usage, costs, latency, quality per tenant. Critical for understanding AI spend per customer
+- Together they provide: model routing (use cheapest model that works), usage-based billing data (charge customers for AI usage), quality monitoring (detect model regressions)
+- Alternatives considered: LangChain (too heavy, Python-centric), LiteLLM (good proxy but no UI), Helicone (SaaS-only, less flexible)
+  **Research:** `research/saas-platform-technical-architecture-2026.md`
+  **Consequences:** Langfuse is open source (MIT), self-hostable — low lock-in. Vercel AI SDK is MIT-licensed. Free tier: Langfuse 50K observations/month.
+
+---
+
+## ADR-018: Tailwind CSS v4 Over v3
+
+**Date:** 2026-03-10
+**Status:** Accepted
+**Context:** Platform needs per-tenant theming (different colours, fonts per customer). Currently using Tailwind v3 with JavaScript-based configuration.
+**Decision:** Upgrade from Tailwind CSS v3 to v4.
+**Rationale:**
+
+- Native CSS variable theming — per-tenant branding becomes a single `data-theme` attribute change instead of runtime JS
+- 100x faster incremental builds (Rust-based engine)
+- No more `tailwind.config.js` — configuration moves to CSS, reducing JavaScript overhead
+- CSS-first approach means themes can be loaded/switched without page reload
+- shadcn/ui v3 designed for Tailwind v4 — component library alignment
+  **Research:** `research/frontend-architecture-saas-2026.md`
+  **Consequences:** Migration from v3 to v4 requires updating config format and some utility class names. Low risk — automated codemods available. No production CSS to migrate.
+
+---
+
+## Technology Validation (2026-03-10)
+
+Before starting Phase 1 implementation, every major technology choice was challenged with a devil's advocate analysis. This section records the confidence level and key risks for each decision.
+
+| ADR | Decision             | Confidence  | Key Risk                                | Mitigation                                                             |
+| --- | -------------------- | ----------- | --------------------------------------- | ---------------------------------------------------------------------- |
+| 001 | Modular monolith     | Very High   | Coupling if boundaries aren't enforced  | ESLint rules + package exports                                         |
+| 002 | Turborepo + pnpm     | High        | Less codegen than Nx                    | Acceptable trade-off for simplicity                                    |
+| 003 | PostgreSQL + RLS     | Very High   | RLS policy bugs leak data               | Automated isolation tests (Phase 1 Step 9)                             |
+| 006 | Clerk auth           | High        | Highest vendor lock-in                  | Abstract behind auth service interface; store IDs as `externalId`      |
+| 007 | Drizzle ORM          | High        | Smaller ecosystem than Prisma           | SQL-first = standard SQL underneath; community momentum strong         |
+| 008 | Neon                 | High        | Databricks acquisition uncertainty      | Standard PostgreSQL — change one connection string to leave            |
+| 009 | tRPC + Hono          | High        | Two API layers adds complexity          | Complementary (type safety + middleware); both lightweight             |
+| 010 | PostHog              | High        | No approval workflows for flags         | Acceptable at startup scale; governance added later if needed          |
+| 011 | Trigger.dev v4       | High        | Newer tool, separate deployment         | Open source + self-hostable as fallback                                |
+| 012 | Vercel hosting       | Medium-High | Price spikes at scale; proprietary APIs | Avoid Vercel-specific APIs; use Hono (portable); OpenNext as exit path |
+| 013 | Stripe billing       | High        | Medium lock-in                          | Abstract behind billing interface; industry-standard choice            |
+| 014 | Upstash Redis        | High        | Free tier limits                        | Standard Redis protocol; swap providers easily                         |
+| 015 | Resend + Knock       | High        | Knock medium lock-in                    | Abstract behind notification interface                                 |
+| 016 | Sentry + BetterStack | High        | Multiple tools to manage                | Each is best-in-class and independently replaceable                    |
+| 017 | AI SDK + Langfuse    | High        | Model provider landscape changes fast   | SDK is provider-agnostic; Langfuse is open source                      |
+| 018 | Tailwind v4          | High        | Migration effort from v3                | Automated codemods; no production CSS yet                              |
+
+**Watch list (no action needed yet):**
+
+| Technology               | Trigger to Re-evaluate                                  |
+| ------------------------ | ------------------------------------------------------- |
+| Better Auth / Stack Auth | If Clerk pricing becomes a problem                      |
+| WorkOS                   | When enterprise customers need SAML/SCIM SSO            |
+| Coolify / Railway        | If Vercel monthly hosting exceeds $500                  |
+| Lucia Auth               | If open-source auth becomes mature enough               |
+| Turso                    | If edge data or database-per-tenant isolation is needed |
+| Jotai                    | If Zustand proves insufficient for complex editor state |
+| TanStack Form            | If form complexity exceeds React Hook Form capabilities |
