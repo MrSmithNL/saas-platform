@@ -22,6 +22,12 @@
     "check:depcruise": "depcruise --config .dependency-cruiser.mjs --output-type err packages/ apps/",
     "knip": "knip",
     "create:vertical": "bash tooling/scripts/create-vertical.sh",
+    "staging:up": "bash scripts/staging-up.sh",
+    "staging:down": "bash scripts/staging-down.sh",
+    "staging:reset": "bash scripts/staging-reset.sh",
+    "staging:dev": "bash scripts/staging-dev.sh",
+    "staging:build": "bash scripts/staging-build.sh",
+    "staging:db:push": "bash scripts/staging-db-push.sh",
     "clean": "turbo clean && rm -rf node_modules",
     "prepare": "husky"
   },
