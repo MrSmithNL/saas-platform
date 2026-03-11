@@ -4,18 +4,18 @@
 
 ## Active Risks
 
-| ID | Risk | Severity | Status | Mitigation | Owner |
-|----|------|----------|--------|------------|-------|
-| SR-001 | Multi-tenant data leakage | Critical | Open | PostgreSQL RLS policies on all tenant-scoped tables; tenant context middleware validates on every request | Malcolm |
-| SR-002 | AI prompt injection | High | Open | Input sanitisation, output filtering, model-level guardrails in ai-gateway package | Malcolm |
-| SR-003 | Stripe webhook spoofing | High | Open | Webhook signature verification, idempotency keys | Malcolm |
-| SR-004 | Credential exposure in git | High | Mitigated | .gitignore covers .env files; .env.example has no real values; Bitwarden for storage | Malcolm |
+| ID     | Risk                       | Severity | Status    | Mitigation                                                                                                | Owner   |
+| ------ | -------------------------- | -------- | --------- | --------------------------------------------------------------------------------------------------------- | ------- |
+| SR-001 | Multi-tenant data leakage  | Critical | Open      | PostgreSQL RLS policies on all tenant-scoped tables; tenant context middleware validates on every request | Malcolm |
+| SR-002 | AI prompt injection        | High     | Open      | Input sanitisation, output filtering, model-level guardrails in ai-gateway package                        | Malcolm |
+| SR-003 | Stripe webhook spoofing    | High     | Open      | Webhook signature verification, idempotency keys                                                          | Malcolm |
+| SR-004 | Credential exposure in git | High     | Mitigated | .gitignore covers .env files; .env.example has no real values; Bitwarden for storage                      | Malcolm |
 
 ## Resolved Risks
 
-| ID | Risk | Resolution | Date |
-|----|------|-----------|------|
-| — | — | — | — |
+| ID  | Risk | Resolution | Date |
+| --- | ---- | ---------- | ---- |
+| —   | —    | —          | —    |
 
 ## Security Principles
 

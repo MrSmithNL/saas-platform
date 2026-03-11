@@ -30,20 +30,20 @@ packages/
 
 ## Tech Stack
 
-| Layer | Choice |
-|-------|--------|
-| Framework | Next.js 15 (App Router) |
-| Language | TypeScript (strict) |
-| Database | PostgreSQL + Prisma + RLS |
-| Auth | Clerk |
-| Billing | Stripe |
-| AI | Vercel AI SDK + LiteLLM |
-| UI | shadcn/ui + Tailwind CSS |
-| Email | Resend |
-| Cache | Redis (Upstash) |
-| Monorepo | Turborepo + pnpm |
-| Testing | Vitest + Playwright |
-| Monitoring | Sentry + PostHog |
+| Layer      | Choice                    |
+| ---------- | ------------------------- |
+| Framework  | Next.js 15 (App Router)   |
+| Language   | TypeScript (strict)       |
+| Database   | PostgreSQL + Prisma + RLS |
+| Auth       | Clerk                     |
+| Billing    | Stripe                    |
+| AI         | Vercel AI SDK + LiteLLM   |
+| UI         | shadcn/ui + Tailwind CSS  |
+| Email      | Resend                    |
+| Cache      | Redis (Upstash)           |
+| Monorepo   | Turborepo + pnpm          |
+| Testing    | Vitest + Playwright       |
+| Monitoring | Sentry + PostHog          |
 
 ## Getting Started
 
@@ -77,6 +77,7 @@ This project is built on extensive research:
 - **R-002:** [Multi-Tenant SaaS as Reusable Platform](../smith-ai-agency/research/multi-tenant-saas-platform-capability-research.md) — 60+ sources, project structure and methodology
 
 Key research findings driving our decisions:
+
 - Modular monolith over microservices (Shopify pattern)
 - Shape Up methodology for solo founder scaling
 - PostgreSQL + RLS for multi-tenancy (not separate databases)

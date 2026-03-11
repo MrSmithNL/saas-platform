@@ -4,7 +4,14 @@ export default defineConfig({
   test: {
     passWithNoTests: true,
     include: ["**/*.test.ts", "**/*.test.tsx"],
-    exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**", "**/e2e/**"],
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.next/**",
+      "**/e2e/**",
+      "**/generators/**",
+      "**/.stryker-tmp/**",
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
