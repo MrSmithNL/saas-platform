@@ -120,7 +120,7 @@ jobs:
       - name: Check for AI anti-patterns
         run: |
           #!/bin/bash
-          set -uo pipefail
+          set -u
           WARNINGS=0
 
           echo "## AI Anti-Pattern Detection"
