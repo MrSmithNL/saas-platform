@@ -237,6 +237,140 @@ describe("Agent Runtime Isolation (FF-014)", () => {
   });
 });
 
+describe("Horizontal Coupling (same-level isolation)", () => {
+  describe("L1: Foundation packages do not import each other", () => {
+    const l1Packages = [
+      { name: "database", pkg: "@saas-platform/database" },
+      { name: "ui", pkg: "@saas-platform/ui" },
+      { name: "config", pkg: "@saas-platform/config" },
+      { name: "utils", pkg: "@saas-platform/utils" },
+    ];
+
+    for (const source of l1Packages) {
+      for (const target of l1Packages) {
+        if (source.name === target.name) continue;
+        it(`packages/${source.name} does not import ${target.pkg}`, () => {
+          const violations = hasImportFrom(`packages/${source.name}`, target.pkg);
+          expect(violations, `L1 horizontal coupling: ${source.name} → ${target.name}`).toEqual([]);
+        });
+      }
+    }
+  });
+
+  describe("L2: Core sub-packages do not import from non-core L2 packages", () => {
+    const nonCoreL2 = [
+      { name: "ai-gateway", pkg: "@saas-platform/ai-gateway" },
+      { name: "notifications", pkg: "@saas-platform/notifications" },
+      { name: "feature-flags", pkg: "@saas-platform/feature-flags" },
+    ];
+
+    for (const source of nonCoreL2) {
+      for (const target of nonCoreL2) {
+        if (source.name === target.name) continue;
+        it(`packages/${source.name} does not import ${target.pkg}`, () => {
+          const violations = hasImportFrom(`packages/${source.name}`, target.pkg);
+          expect(violations, `L2 horizontal coupling: ${source.name} → ${target.name}`).toEqual([]);
+        });
+      }
+    }
+  });
+});
+
+// Helper: validate a manifest field value matches a schema pattern
+function validatePattern(
+  mod: string,
+  field: string,
+  value: string,
+  pattern: string
+): string | null {
+  if (!value || !pattern) return null;
+  return new RegExp(pattern).test(value)
+    ? null
+    : `modules/${mod}: ${field} "${value}" fails pattern ${pattern}`;
+}
+
+// Helper: check required fields are present
+function validateRequired(
+  mod: string,
+  manifest: Record<string, unknown>,
+  required: string[]
+): string[] {
+  return required
+    .filter((field) => manifest[field] === undefined)
+    .map((field) => `modules/${mod}: missing required field "${field}"`);
+}
+
+// Helper: validate string field patterns (name, capability, version)
+function validatePatterns(
+  mod: string,
+  manifest: Record<string, unknown>,
+  properties: Record<string, Record<string, string>>
+): string[] {
+  return ["name", "capability", "version"]
+    .map((field) =>
+      validatePattern(mod, field, manifest[field] as string, properties[field]?.pattern)
+    )
+    .filter((err): err is string => err !== null);
+}
+
+// Helper: validate dependencies, permissions, and events structure
+function validateStructure(mod: string, manifest: Record<string, unknown>): string[] {
+  const violations: string[] = [];
+  const deps = manifest.dependencies as Record<string, unknown> | undefined;
+  if (deps) {
+    if (!Array.isArray(deps.platform))
+      violations.push(`modules/${mod}: dependencies.platform must be an array`);
+    if (!Array.isArray(deps.modules))
+      violations.push(`modules/${mod}: dependencies.modules must be an array`);
+  }
+  const permPattern = /^[a-z-]+:[a-z]+$/;
+  const perms = manifest.permissions as string[] | undefined;
+  if (Array.isArray(perms)) {
+    violations.push(
+      ...perms
+        .filter((p) => !permPattern.test(p))
+        .map((p) => `modules/${mod}: permission "${p}" fails format`)
+    );
+  }
+  const events = manifest.events as Record<string, unknown> | undefined;
+  if (events) {
+    if (!Array.isArray(events.emits))
+      violations.push(`modules/${mod}: events.emits must be an array`);
+    if (!Array.isArray(events.subscribes))
+      violations.push(`modules/${mod}: events.subscribes must be an array`);
+  }
+  return violations;
+}
+
+describe("Module Manifest Schema Validation", () => {
+  it("every module manifest validates against the JSON schema", () => {
+    const modulesDir = join(ROOT, "modules");
+    if (!existsSync(modulesDir)) return;
+
+    const schemaPath = join(ROOT, "tooling/schemas/module-manifest.schema.json");
+    expect(existsSync(schemaPath), "module-manifest.schema.json missing").toBe(true);
+    const schema = JSON.parse(readFileSync(schemaPath, "utf-8"));
+
+    const modules = readdirSync(modulesDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && !d.name.startsWith("_"))
+      .map((d) => d.name);
+
+    const properties = schema.properties as Record<string, Record<string, string>>;
+    const violations: string[] = [];
+    for (const mod of modules) {
+      const manifestPath = join(modulesDir, mod, "module-manifest.json");
+      if (!existsSync(manifestPath)) continue;
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
+      violations.push(
+        ...validateRequired(mod, manifest, schema.required as string[]),
+        ...validatePatterns(mod, manifest, properties),
+        ...validateStructure(mod, manifest)
+      );
+    }
+    expect(violations, "Module manifests failing schema validation").toEqual([]);
+  });
+});
+
 describe("Naming Conventions", () => {
   it("all TypeScript files use kebab-case", () => {
     const dirs = ["packages", "modules", "apps"];

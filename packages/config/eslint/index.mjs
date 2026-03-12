@@ -73,6 +73,7 @@ export const baseConfig = [
         "**/*.test.tsx",
         "**/*.spec.ts",
         "**/*.spec.tsx",
+        "tooling/**",
       ],
     },
     rules: {
@@ -98,11 +99,11 @@ export const baseConfig = [
       "max-params": ["error", { max: 4 }],
       // Function length: max 30 lines (excluding comments/blanks)
       "max-lines-per-function": [
-        "warn",
+        "error",
         { max: 30, skipBlankLines: true, skipComments: true },
       ],
       // File length: max 400 lines
-      "max-lines": ["warn", { max: 400, skipBlankLines: true, skipComments: true }],
+      "max-lines": ["error", { max: 400, skipBlankLines: true, skipComments: true }],
 
       // No console.log (warn)
       "no-console": ["warn", { allow: ["warn", "error"] }],

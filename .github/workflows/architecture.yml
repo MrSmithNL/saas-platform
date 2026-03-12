@@ -59,6 +59,10 @@ jobs:
           fi
           echo "No hardcoded tenant IDs found"
 
+      # FF-013/FF-014 + all boundary tests: Vitest architecture fitness tests
+      - name: "FF-013/014: Vitest architecture fitness tests (boundaries, manifests, isolation)"
+        run: pnpm vitest run --config tooling/tests/vitest.arch.config.ts
+
       # FF-010: Approved dependency check
       - name: "FF-010: Dependency governance — approved list check"
         run: node tooling/scripts/check-dependencies.mjs

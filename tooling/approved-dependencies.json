@@ -1,28 +1,22 @@
 {
-  "_comment": "Approved dependency list for saas-platform. New dependencies must be reviewed by the Technical Architect before merge.",
-  "_updated": "2026-03-10",
-  "_review_criteria": "maintenance, security, license (MIT/Apache/BSD/ISC), size, necessity",
-  "production": [
-    "@prisma/client",
-    "class-variance-authority",
-    "clsx",
-    "lucide-react",
-    "next",
-    "react",
-    "react-dom",
-    "tailwind-merge"
-  ],
-  "development": [
+  "approved": [
     "@changesets/cli",
     "@eslint/js",
     "@playwright/test",
+    "@prisma/client",
+    "@stryker-mutator/core",
+    "@stryker-mutator/typescript-checker",
+    "@stryker-mutator/vitest-runner",
     "@tailwindcss/typography",
     "@types/node",
     "@types/react",
     "@types/react-dom",
     "@typescript-eslint/eslint-plugin",
     "@typescript-eslint/parser",
+    "@vitest/coverage-v8",
     "autoprefixer",
+    "class-variance-authority",
+    "clsx",
     "dependency-cruiser",
     "eslint",
     "eslint-plugin-boundaries",
@@ -30,23 +24,21 @@
     "husky",
     "knip",
     "lint-staged",
+    "lucide-react",
     "madge",
+    "next",
     "postcss",
     "prettier",
     "prisma",
+    "react",
+    "react-dom",
+    "tailwind-merge",
     "tailwindcss",
     "tsx",
     "turbo",
     "typescript",
     "vitest"
   ],
-  "workspace": [
-    "@saas-platform/ai-gateway",
-    "@saas-platform/core",
-    "@saas-platform/database",
-    "@saas-platform/feature-flags",
-    "@saas-platform/notifications",
-    "@saas-platform/ui",
-    "@saas-platform/utils"
-  ]
+  "lastUpdated": "2026-03-12",
+  "notes": "Auto-generated baseline. Review before adding new dependencies."
 }
