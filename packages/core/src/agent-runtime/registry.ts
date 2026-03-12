@@ -11,6 +11,7 @@ import { randomUUID } from "node:crypto";
 import { getTenantContext, isModuleEnabled } from "../tenancy/context.js";
 
 import type { ToolRegistration, ToolExecutionResult, ToolAuditEntry } from "./types.js";
+import type { TenantContext } from "../tenancy/context.js";
 
 interface ExecutionContext {
   toolName: string;
@@ -87,7 +88,7 @@ export class ToolRegistry {
       );
     }
 
-    return this.executeTool(tool, input, execCtx);
+    return this.executeTool(tool, input, ctx, execCtx);
   }
 
   getAuditLog(): readonly ToolAuditEntry[] {
@@ -106,15 +107,13 @@ export class ToolRegistry {
   private async executeTool(
     tool: ToolRegistration,
     input: unknown,
+    tenantCtx: TenantContext,
     execCtx: ExecutionContext
   ): Promise<ToolExecutionResult> {
     const startTime = Date.now();
 
     try {
-      const data = await tool.handler(input, {
-        tenantId: execCtx.tenantId,
-        userId: execCtx.userId,
-      });
+      const data = await tool.handler(input, tenantCtx);
       const durationMs = Date.now() - startTime;
       this.logAudit({
         ...execCtx,
