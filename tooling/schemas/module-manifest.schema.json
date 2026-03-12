@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Module Manifest",
+  "description": "Self-describing manifest for a business module in the SaaS platform",
+  "type": "object",
+  "required": [
+    "name",
+    "displayName",
+    "version",
+    "description",
+    "dependencies",
+    "permissions",
+    "events"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Module identifier (kebab-case)"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Human-readable module name"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version"
+    },
+    "description": {
+      "type": "string",
+      "description": "What this module does"
+    },
+    "dependencies": {
+      "type": "object",
+      "required": ["platform", "modules"],
+      "properties": {
+        "platform": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Required platform capabilities (e.g., core/tenancy, core/auth)"
+        },
+        "modules": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Modules this module communicates with (via events only, NOT direct imports)"
+        }
+      }
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "component"],
+        "properties": {
+          "path": { "type": "string" },
+          "component": { "type": "string" }
+        }
+      },
+      "description": "Routes this module registers"
+    },
+    "permissions": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z-]+:[a-z]+$" },
+      "description": "Permission strings (module:action format)"
+    },
+    "events": {
+      "type": "object",
+      "required": ["emits", "subscribes"],
+      "properties": {
+        "emits": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Event types this module publishes"
+        },
+        "subscribes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Event types this module listens to"
+        }
+      }
+    },
+    "agentTools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      },
+      "description": "AI agent tools this module contributes to the agent runtime"
+    },
+    "featureFlags": {
+      "type": "object",
+      "additionalProperties": { "type": "boolean" },
+      "description": "Feature flags with default values"
+    }
+  }
+}

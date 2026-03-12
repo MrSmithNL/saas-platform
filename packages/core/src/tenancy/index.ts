@@ -3,5 +3,14 @@
  * Every request runs with a tenant context. Every read/write enforces it.
  */
 
-// Placeholder — implementation in Phase 1
 export const TENANCY_MODULE = "tenancy" as const;
+
+// Tenant context (AsyncLocalStorage-based)
+export {
+  type TenantContext,
+  withTenantContext,
+  getTenantContext,
+  tryGetTenantContext,
+  getCurrentTenantId,
+  isModuleEnabled,
+} from "./context.js";

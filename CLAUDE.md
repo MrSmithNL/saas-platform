@@ -23,39 +23,40 @@ These instructions apply to this project in every session.
 ## Related Projects
 
 - **Agency standards:** `~/Claude Code/Projects/smith-ai-agency/docs/capabilities/`
+- **Development Architecture Framework:** `smith-ai-agency/docs/capabilities/development-architecture-framework.md`
 - **SEO engine (PROD-001):** `~/Claude Code/Projects/seo-toolkit/` — integrates as a service
-- **Research:** `smith-ai-agency/research/multi-tenant-ai-saas-architecture.md` (R-001)
-- **Research:** `smith-ai-agency/research/multi-tenant-saas-platform-capability-research.md` (R-002)
 
 ---
 
 ## Agency-Wide Delivery Framework
 
-This project operates under the agency's autonomous delivery framework. All standards, processes, and department manager oversight apply here:
+This project operates under the agency's autonomous delivery framework:
 
-- **Quality Manager** — Code quality, testing, documentation standards (`smith-ai-agency/docs/capabilities/quality-manager.md`)
-- **DevOps Manager** — CI/CD, deployment, infrastructure reliability (`smith-ai-agency/docs/capabilities/devops-manager.md`)
-- **Technical Architect** — Architecture decisions, fitness functions, dependency governance (`smith-ai-agency/docs/capabilities/technical-architect.md`)
-- **Delivery Manager** — Sprint planning, objective tracking, blocker resolution (`smith-ai-agency/docs/capabilities/delivery-manager.md`)
-- **Requirements Engineering** — Spec-driven development, 3-gate process (`smith-ai-agency/docs/capabilities/requirements-engineering.md`)
-- **Sprint Management** — 2-week cadence, velocity tracking (`smith-ai-agency/objectives/sprints/`)
+- **Quality Manager** — Code quality, testing, documentation standards
+- **DevOps Manager** — CI/CD, deployment, infrastructure reliability
+- **Technical Architect** — Architecture decisions, fitness functions, dependency governance
+- **Delivery Manager** — Sprint planning, objective tracking, blocker resolution
+- **Requirements Engineering** — Spec-driven development, 3-gate process
 
 ---
 
-## Architecture — 4-Layer Structure
+## Architecture — 6-Level Hierarchy
 
 ```
-Layer 4: Vertical Products (apps/sell-funnel, apps/book-rocket)
-Layer 3: Platform Services (packages/ai-gateway, notifications, feature-flags)
-Layer 2: Platform Core (packages/core — auth, tenancy, billing, rbac, api)
-Layer 1: Foundation (packages/database, ui, config, utils)
+Level 5: Verticals       (apps/* — SellFunnel, AISOGEN, Book Rocket)
+Level 3: Modules          (modules/* — pluggable business features)
+Level 2: Capabilities     (packages/core/*, ai-gateway, notifications, feature-flags)
+Level 1: Foundation       (packages/database, ui, config, utils)
 ```
 
-**Dependency rules:** `apps/` → `packages/` (never reverse). No circular deps. No cross-vertical imports. Every package exports through `src/index.ts`.
+**Dependency rules:** `apps/` → `modules/` → `packages/` (one-way, never reverse). No circular deps. No cross-vertical imports. No cross-module imports (use event bus). Every package exports through `src/index.ts`.
 
-**Key decisions:** Modular monolith (Shopify pattern), PostgreSQL + RLS for multi-tenancy, Next.js App Router, Better Auth (self-hosted, RBAC, orgs, 2FA), Stripe billing, shadcn/ui + Tailwind CSS v4, Drizzle ORM, tRPC, Zustand + TanStack Query, Tremor (charts), Vercel AI SDK, Vercel deployment, Shape Up methodology.
+**Key patterns:**
 
-**Standard stack:** This project follows the agency standard technology stack (ADR-013). See `smith-ai-agency/docs/capabilities/technical-engineering-standards.md` §2.6 for the full reference. Per-vertical theming via CSS variable overrides in `apps/*/src/app/globals.css`.
+- `definePlatformConfig()` for vertical configuration (ADR-019)
+- Event bus for module-to-module communication (ADR-021)
+- AsyncLocalStorage for tenant context (ADR-022)
+- Module manifests for self-describing business modules (ADR-020)
 
 ---
 
@@ -70,9 +71,8 @@ pnpm test:arch        # Architecture fitness functions
 pnpm check:deps       # Dependency governance
 pnpm check:circular   # Circular dependency check
 pnpm check:depcruise  # dependency-cruiser validation
-pnpm db:generate      # Generate Prisma client
-pnpm db:push          # Push schema to database
-pnpm db:migrate       # Run migrations
+pnpm create:vertical  # Scaffold new vertical (apps/)
+pnpm create:module    # Scaffold new module (modules/)
 ```
 
 ---

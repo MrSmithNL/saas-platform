@@ -58,6 +58,11 @@ export const baseConfig = [
           capture: ["app"],
         },
         {
+          type: "module",
+          pattern: "modules/*",
+          capture: ["module"],
+        },
+        {
           type: "package",
           pattern: "packages/*",
           capture: ["package"],
@@ -142,6 +147,10 @@ export const baseConfig = [
           rules: [
             {
               from: ["app"],
+              allow: ["package", "module"],
+            },
+            {
+              from: ["module"],
               allow: ["package"],
             },
             {
@@ -208,6 +217,10 @@ export const baseConfig = [
           rules: [
             {
               target: ["package"],
+              allow: ["index.ts", "index.tsx", "index.js", "index.mjs"],
+            },
+            {
+              target: ["module"],
               allow: ["index.ts", "index.tsx", "index.js", "index.mjs"],
             },
             {

@@ -1,0 +1,19 @@
+{
+  "$schema": "../../tooling/schemas/module-manifest.schema.json",
+  "name": "template",
+  "displayName": "Template Module",
+  "version": "0.0.0",
+  "description": "Golden path template — copy this to create a new module",
+  "dependencies": {
+    "platform": ["core/tenancy", "core/auth"],
+    "modules": []
+  },
+  "routes": [{ "path": "/template", "component": "TemplateDashboard" }],
+  "permissions": ["template:read", "template:write", "template:admin"],
+  "events": {
+    "emits": [],
+    "subscribes": []
+  },
+  "agentTools": [],
+  "featureFlags": {}
+}

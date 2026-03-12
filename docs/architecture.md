@@ -1,22 +1,31 @@
 # Architecture — SaaS Platform (PROD-004)
 
-> Last updated: 2026-03-10
+> Last updated: 2026-03-12
 
 ## System Overview
 
 Multi-tenant AI SaaS platform built as a modular monolith in a Turborepo monorepo. Serves multiple vertical products (Sell Funnel, AISOGEN, Book Rocket) from shared infrastructure. Every tenant's data is isolated via PostgreSQL Row-Level Security (RLS) with policies defined directly in the Drizzle ORM schema.
 
-### Reusable Platform Core (ADR-019)
+### 6-Level Code Separation Hierarchy (ADR-019, ADR-020)
 
-The `packages/` directory is the reusable "mother" platform. Verticals in `apps/` consume shared packages via `workspace:*` — changes to any shared package are instantly available to all verticals in the same commit. No forking, no publishing, no version drift.
+The platform follows a strict 6-level hierarchy. Code belongs at exactly ONE level. Dependencies flow downward only.
 
-**Design principles:**
+```
+Level 5: Verticals       (apps/* — SellFunnel, AISOGEN, Book Rocket)
+Level 3: Business Modules (modules/* — pluggable features enabled per tenant)
+Level 2: Capabilities     (packages/core/*, ai-gateway, notifications, feature-flags)
+Level 1: Foundation       (packages/database, ui, config, utils)
+```
 
-1. Shared packages are **configuration-driven** — verticals pass config objects, never modify shared code
-2. Verticals only **ADD**, never **MODIFY** shared packages — wrap, extend, or configure instead
-3. **Composition pattern** — shared packages export primitives, verticals compose them into pages
-4. Dependencies flow **one way only**: `apps/` → `packages/` (never reversed, never between verticals)
-5. **Boundary enforcement** via ESLint rules prevents cross-vertical imports and package internal access
+**Dependency flow:** `apps/` → `modules/` → `packages/` (one-way, never reverse)
+
+**Key patterns:**
+
+1. `definePlatformConfig()` — verticals pass config objects, never modify shared code (ADR-019)
+2. **Event bus** — modules communicate via typed events, never direct imports (ADR-021)
+3. **AsyncLocalStorage** — tenant context flows through the full request lifecycle (ADR-022)
+4. **Module manifests** — self-describing business modules with routes, permissions, events (ADR-020)
+5. **Boundary enforcement** — eslint-plugin-boundaries + dependency-cruiser + architecture tests
 
 ## Architecture Diagram
 

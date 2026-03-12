@@ -11,7 +11,8 @@
     "./billing": "./src/billing/index.ts",
     "./rbac": "./src/rbac/index.ts",
     "./api": "./src/api/index.ts",
-    "./platform": "./src/platform/index.ts"
+    "./platform": "./src/platform/index.ts",
+    "./events": "./src/events/index.ts"
   },
   "scripts": {
     "build": "tsc",
