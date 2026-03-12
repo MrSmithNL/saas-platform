@@ -1,0 +1,56 @@
+version: "3.9"
+
+# Staging environment — mirrors production topology locally
+# Separate from dev (docker-compose.yml) with isolated databases
+# Usage: docker compose -f docker-compose.staging.yml up -d
+
+services:
+  postgres-staging:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: staging_user
+      POSTGRES_PASSWORD: staging_password_2026
+      POSTGRES_DB: saas_platform_staging
+    volumes:
+      - staging_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U staging_user -d saas_platform_staging"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-staging:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    command: redis-server --requirepass staging_redis_2026
+    volumes:
+      - staging_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "staging_redis_2026", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Optional: pgAdmin for database inspection
+  pgadmin-staging:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@smithai.agency
+      PGADMIN_DEFAULT_PASSWORD: staging_admin_2026
+    depends_on:
+      postgres-staging:
+        condition: service_healthy
+    profiles:
+      - tools
+
+volumes:
+  staging_postgres_data:
+  staging_redis_data:

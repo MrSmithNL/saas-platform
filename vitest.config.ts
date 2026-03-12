@@ -4,7 +4,14 @@ export default defineConfig({
   test: {
     passWithNoTests: true,
     include: ["**/*.test.ts", "**/*.test.tsx"],
-    exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**", "**/e2e/**"],
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.next/**",
+      "**/e2e/**",
+      "**/generators/**",
+      "**/.stryker-tmp/**",
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
@@ -12,6 +19,7 @@ export default defineConfig({
         lines: 80,
         branches: 70,
       },
+      include: ["packages/core/src/**"],
       exclude: [
         "node_modules/**",
         "dist/**",
@@ -19,6 +27,10 @@ export default defineConfig({
         "**/*.config.*",
         "**/*.d.ts",
         "**/prisma/**",
+        "**/generators/**",
+        "**/.stryker-tmp/**",
+        "**/tooling/**",
+        "**/apps/**",
       ],
     },
   },

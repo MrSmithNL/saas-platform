@@ -100,7 +100,7 @@ jobs:
               WARNINGS=$((WARNINGS + 1))
             done
 
-          done < <(find . -name '*.ts' -o -name '*.tsx' | grep -v node_modules | grep -v dist | grep -v '.next' | grep -v '.d.ts' | sort -z | tr '\n' '\0')
+          done < <(find . \( -name '*.ts' -o -name '*.tsx' \) -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.next/*' -not -name '*.d.ts' -print0 | sort -z)
 
           echo ""
           echo "Complexity check complete."
@@ -120,18 +120,23 @@ jobs:
       - name: Check for AI anti-patterns
         run: |
           #!/bin/bash
-          set -euo pipefail
+          set -u
           WARNINGS=0
 
           echo "## AI Anti-Pattern Detection"
           echo ""
 
           # Find all TS files (exclude node_modules, dist, .next, generated)
-          TS_FILES=$(find . -name '*.ts' -o -name '*.tsx' | grep -v node_modules | grep -v dist | grep -v '.next' | grep -v '.d.ts')
+          TS_FILES=$(find . \( -name '*.ts' -o -name '*.tsx' \) -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/.next/*' -not -name '*.d.ts' 2>/dev/null || true)
+
+          if [ -z "$TS_FILES" ]; then
+            echo "No TypeScript files found — skipping"
+            exit 0
+          fi
 
           # 1. Excessive comments ratio
-          TOTAL_LINES=$(echo "$TS_FILES" | xargs cat 2>/dev/null | wc -l || echo 0)
-          COMMENT_LINES=$(echo "$TS_FILES" | xargs cat 2>/dev/null | grep -cE '^\s*(//|/\*|\*)' || true)
+          TOTAL_LINES=$(echo "$TS_FILES" | xargs cat 2>/dev/null | wc -l | tr -d ' ')
+          COMMENT_LINES=$(echo "$TS_FILES" | xargs cat 2>/dev/null | grep -cE '^\s*(//|/\*|\*)' || echo 0)
           if [ "$TOTAL_LINES" -gt 0 ]; then
             RATIO=$((COMMENT_LINES * 100 / TOTAL_LINES))
             echo "Comment ratio: ${RATIO}% (${COMMENT_LINES}/${TOTAL_LINES} lines)"
@@ -142,28 +147,28 @@ jobs:
           fi
 
           # 2. Phantom error handling: empty catch blocks
-          EMPTY_CATCH=$(echo "$TS_FILES" | xargs grep -ln 'catch.*{[[:space:]]*}' 2>/dev/null | wc -l || true)
+          EMPTY_CATCH=$(echo "$TS_FILES" | xargs grep -l 'catch.*{[[:space:]]*}' 2>/dev/null | wc -l | tr -d ' ')
           if [ "$EMPTY_CATCH" -gt 2 ]; then
             echo "::warning::Found ${EMPTY_CATCH} files with empty catch blocks — check for phantom error handling"
             WARNINGS=$((WARNINGS + 1))
           fi
 
           # 3. any type usage (type safety drift)
-          ANY_COUNT=$(echo "$TS_FILES" | xargs grep -c ': any\b\|as any\b' 2>/dev/null | awk -F: '{s+=$NF} END {print s+0}')
+          ANY_COUNT=$(echo "$TS_FILES" | xargs grep -c -E ': any\b|as any\b' 2>/dev/null | awk -F: '{s+=$NF} END {print s+0}')
           if [ "$ANY_COUNT" -gt 5 ]; then
             echo "::warning::Found ${ANY_COUNT} uses of 'any' type — replace with proper types"
             WARNINGS=$((WARNINGS + 1))
           fi
 
           # 4. Console.log left in code
-          CONSOLE_LOGS=$(echo "$TS_FILES" | xargs grep -c 'console\.\(log\|debug\|info\)' 2>/dev/null | awk -F: '{s+=$NF} END {print s+0}')
+          CONSOLE_LOGS=$(echo "$TS_FILES" | xargs grep -c -E 'console\.(log|debug|info)' 2>/dev/null | awk -F: '{s+=$NF} END {print s+0}')
           if [ "$CONSOLE_LOGS" -gt 3 ]; then
             echo "::warning::Found ${CONSOLE_LOGS} console.log/debug/info calls — use proper logger"
             WARNINGS=$((WARNINGS + 1))
           fi
 
           # 5. TODO/FIXME/HACK accumulation
-          TODOS=$(echo "$TS_FILES" | xargs grep -c 'TODO\|FIXME\|HACK\|XXX' 2>/dev/null | awk -F: '{s+=$NF} END {print s+0}')
+          TODOS=$(echo "$TS_FILES" | xargs grep -c -E 'TODO|FIXME|HACK|XXX' 2>/dev/null | awk -F: '{s+=$NF} END {print s+0}')
           if [ "$TODOS" -gt 10 ]; then
             echo "::warning::Found ${TODOS} TODO/FIXME/HACK markers — review for stale items"
             WARNINGS=$((WARNINGS + 1))

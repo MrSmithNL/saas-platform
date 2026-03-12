@@ -1,5 +1,12 @@
 # Project Instructions — SaaS Platform (PROD-004)
 
+<!-- project-classification
+type: product
+work_nature: software-development
+hierarchy_position: product
+enforcement_profile: full
+-->
+
 These instructions apply to this project in every session.
 
 ---
@@ -46,7 +53,9 @@ Layer 1: Foundation (packages/database, ui, config, utils)
 
 **Dependency rules:** `apps/` → `packages/` (never reverse). No circular deps. No cross-vertical imports. Every package exports through `src/index.ts`.
 
-**Key decisions:** Modular monolith (Shopify pattern), PostgreSQL + RLS for multi-tenancy, Next.js 15 App Router, Clerk auth, Stripe billing, shadcn/ui + Tailwind, Vercel AI SDK + LiteLLM, Shape Up methodology.
+**Key decisions:** Modular monolith (Shopify pattern), PostgreSQL + RLS for multi-tenancy, Next.js App Router, Better Auth (self-hosted, RBAC, orgs, 2FA), Stripe billing, shadcn/ui + Tailwind CSS v4, Drizzle ORM, tRPC, Zustand + TanStack Query, Tremor (charts), Vercel AI SDK, Vercel deployment, Shape Up methodology.
+
+**Standard stack:** This project follows the agency standard technology stack (ADR-013). See `smith-ai-agency/docs/capabilities/technical-engineering-standards.md` §2.6 for the full reference. Per-vertical theming via CSS variable overrides in `apps/*/src/app/globals.css`.
 
 ---
 
