@@ -76,12 +76,38 @@
       "properties": {
         "emits": {
           "type": "array",
-          "items": { "type": "string" },
-          "description": "Event types this module publishes"
+          "items": {
+            "oneOf": [
+              { "type": "string", "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)?$" },
+              {
+                "type": "object",
+                "required": ["name", "schema"],
+                "properties": {
+                  "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)?$" },
+                  "schema": {
+                    "type": "string",
+                    "description": "Path to JSON schema or Zod type for event payload"
+                  }
+                }
+              }
+            ]
+          },
+          "description": "Event types this module publishes — string for untyped, object with schema path for typed"
         },
         "subscribes": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "oneOf": [
+              { "type": "string", "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)?$" },
+              {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)?$" }
+                }
+              }
+            ]
+          },
           "description": "Event types this module listens to"
         }
       }

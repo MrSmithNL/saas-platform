@@ -74,6 +74,7 @@ export const baseConfig = [
         "**/*.spec.ts",
         "**/*.spec.tsx",
         "tooling/**",
+        ".archgate/**",
       ],
     },
     rules: {
@@ -261,6 +262,16 @@ export const baseConfig = [
       "no-console": "off",
       "@typescript-eslint/no-require-imports": "off",
       "max-lines-per-function": "off",
+    },
+  },
+
+  // Archgate rule files — relaxed complexity (rule logic is inherently nested)
+  {
+    files: [".archgate/**/*.ts"],
+    rules: {
+      "max-lines-per-function": "off",
+      complexity: "off",
+      "max-depth": "off",
     },
   },
 ];

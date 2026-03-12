@@ -35,6 +35,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4(@types/node@22.19.15)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
+      archgate:
+        specifier: ^0.9.0
+        version: 0.9.0(typescript@5.9.3)
       autoprefixer:
         specifier: ^10.4.27
         version: 10.4.27(postcss@8.5.8)
@@ -188,6 +191,25 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.0
         version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.4(@types/node@22.19.15)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
+
+  modules/_template:
+    dependencies:
+      '@saas-platform/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@saas-platform/database':
+        specifier: workspace:*
+        version: link:../../packages/database
+      '@saas-platform/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+    devDependencies:
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -1681,6 +1703,28 @@ packages:
 
   app-module-path@2.2.0:
     resolution: {integrity: sha512-gkco+qxENJV+8vFcDiiFhuoSvRXb2a/QPqpSoWhVz829VNJfOTnELbBmPmNKFxf3xdNnw4DWCkzkDaavcX/1YQ==}
+
+  archgate-darwin-arm64@0.9.0:
+    resolution: {integrity: sha512-5GCbgMnQTw2MoExe+K9RETY2FxaT8K+Vzp4OGfZRiOg60wGTmDza7lGCWuS9OVwM5LPnTapBnl8A7P7NhbcM1w==}
+    cpu: [arm64]
+    os: [darwin]
+
+  archgate-linux-x64@0.9.0:
+    resolution: {integrity: sha512-ImrH/SnIwXfHWDQrcNB0w27qpqZ/Rz/8YjDudxWcfNrm3rst4/cI6ixpju5Bz6JNQpJOE62Ggc0vb8lSRNnLTg==}
+    cpu: [x64]
+    os: [linux]
+
+  archgate-win32-x64@0.9.0:
+    resolution: {integrity: sha512-xmxE9yjfwTJtQB5a5Gv6jTrnqudhgXZzLJZxM5cheSwwr1Gb2Zgm9pbk5rwAHb7iEoFAUQCa90NTGFTXTwrBRA==}
+    cpu: [x64]
+    os: [win32]
+
+  archgate@0.9.0:
+    resolution: {integrity: sha512-4AzfQ6Tkko6A1erDTnEu+L8xcvKWz4NKyTcmkka05BDkXMR2dMqTzSWfkDlQsgIIt54oQJaakxp8yVEpedkFlA==}
+    os: [darwin, linux, win32]
+    hasBin: true
+    peerDependencies:
+      typescript: ^5
 
   argparse@1.0.10:
     resolution: {integrity: sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==}
@@ -5417,6 +5461,23 @@ snapshots:
   any-promise@1.3.0: {}
 
   app-module-path@2.2.0: {}
+
+  archgate-darwin-arm64@0.9.0:
+    optional: true
+
+  archgate-linux-x64@0.9.0:
+    optional: true
+
+  archgate-win32-x64@0.9.0:
+    optional: true
+
+  archgate@0.9.0(typescript@5.9.3):
+    dependencies:
+      typescript: 5.9.3
+    optionalDependencies:
+      archgate-darwin-arm64: 0.9.0
+      archgate-linux-x64: 0.9.0
+      archgate-win32-x64: 0.9.0
 
   argparse@1.0.10:
     dependencies:

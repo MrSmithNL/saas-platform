@@ -338,6 +338,21 @@ function validateStructure(mod: string, manifest: Record<string, unknown>): stri
       violations.push(`modules/${mod}: events.emits must be an array`);
     if (!Array.isArray(events.subscribes))
       violations.push(`modules/${mod}: events.subscribes must be an array`);
+
+    // Validate event name format (kebab-case with optional dot separator)
+    const eventNamePattern = /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)?$/;
+    const validateEventNames = (items: unknown[], type: string): void => {
+      for (const item of items) {
+        const name = typeof item === "string" ? item : (item as Record<string, string>)?.name;
+        if (name && !eventNamePattern.test(name)) {
+          violations.push(
+            `modules/${mod}: ${type} event "${name}" must be kebab-case (e.g., "module.event-name")`
+          );
+        }
+      }
+    };
+    if (Array.isArray(events.emits)) validateEventNames(events.emits, "emits");
+    if (Array.isArray(events.subscribes)) validateEventNames(events.subscribes, "subscribes");
   }
   return violations;
 }
@@ -395,10 +410,11 @@ describe("Naming Conventions", () => {
 });
 
 describe("Dependency Governance", () => {
-  it("no hardcoded tenant IDs in source code", () => {
+  it("no hardcoded tenant IDs or UUIDs in source code", () => {
     const dirs = ["packages", "modules", "apps"];
     const violations: string[] = [];
-    const tenantIdPattern = /tenant_[a-f0-9]{8,}|tenantId\s*[:=]\s*['"][^'"]+['"]/;
+    const tenantIdPattern =
+      /tenant_[a-f0-9]{8,}|tenantId\s*[:=]\s*['"][^'"]+['"]|['"][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}['"]/;
 
     for (const dir of dirs) {
       const files = findTsFiles(dir);
