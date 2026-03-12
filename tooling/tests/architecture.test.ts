@@ -191,10 +191,49 @@ describe("Module Manifest Validation", () => {
 
       const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
       expect(manifest.name, `modules/${mod} manifest missing name`).toBeDefined();
+      expect(manifest.capability, `modules/${mod} manifest missing capability`).toBeDefined();
       expect(manifest.displayName, `modules/${mod} manifest missing displayName`).toBeDefined();
       expect(manifest.events, `modules/${mod} manifest missing events`).toBeDefined();
       expect(manifest.permissions, `modules/${mod} manifest missing permissions`).toBeDefined();
     }
+  });
+
+  it("every module manifest has a valid capability field (FF-013)", () => {
+    const modulesDir = join(ROOT, "modules");
+    if (!existsSync(modulesDir)) return;
+
+    const modules = readdirSync(modulesDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && !d.name.startsWith("_"))
+      .map((d) => d.name);
+
+    const violations: string[] = [];
+    for (const mod of modules) {
+      const manifestPath = join(modulesDir, mod, "module-manifest.json");
+      if (!existsSync(manifestPath)) continue;
+
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
+      if (!manifest.capability || typeof manifest.capability !== "string") {
+        violations.push(`modules/${mod}: missing or invalid capability field`);
+      } else if (!/^[a-z][a-z0-9-]*$/.test(manifest.capability)) {
+        violations.push(`modules/${mod}: capability "${manifest.capability}" must be kebab-case`);
+      }
+    }
+    expect(violations, "Module manifests with invalid capability field").toEqual([]);
+  });
+});
+
+describe("Agent Runtime Isolation (FF-014)", () => {
+  it("agent-runtime does not import from modules", () => {
+    const violations = hasImportFrom("packages/core/src/agent-runtime", "@saas-platform/module-");
+    expect(
+      violations,
+      "Agent runtime imports from a module — it should only read manifests"
+    ).toEqual([]);
+  });
+
+  it("agent-runtime does not import from apps", () => {
+    const violations = hasImportFrom("packages/core/src/agent-runtime", "apps/");
+    expect(violations, "Agent runtime imports from apps/").toEqual([]);
   });
 });
 

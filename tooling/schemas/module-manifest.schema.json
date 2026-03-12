@@ -5,6 +5,7 @@
   "type": "object",
   "required": [
     "name",
+    "capability",
     "displayName",
     "version",
     "description",
@@ -17,6 +18,11 @@
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]*$",
       "description": "Module identifier (kebab-case)"
+    },
+    "capability": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Business capability group this module belongs to (e.g., crm, seo, marketing). Modules with the same capability value form a logical business grouping."
     },
     "displayName": {
       "type": "string",

@@ -13,3 +13,4 @@ export * from "./rbac/index.js";
 export * from "./api/index.js";
 export * from "./platform/index.js";
 export * from "./events/index.js";
+export * from "./agent-runtime/index.js";

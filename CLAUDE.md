@@ -44,12 +44,15 @@ This project operates under the agency's autonomous delivery framework:
 
 ```
 Level 5: Verticals       (apps/* — SellFunnel, AISOGEN, Book Rocket)
-Level 3: Modules          (modules/* — pluggable business features)
+Level 4: Agent Runtime    (packages/core/agent-runtime — tool registry, execution, audit)
+Level 3: Modules          (modules/* — pluggable business features, grouped by capability)
 Level 2: Capabilities     (packages/core/*, ai-gateway, notifications, feature-flags)
 Level 1: Foundation       (packages/database, ui, config, utils)
 ```
 
-**Dependency rules:** `apps/` → `modules/` → `packages/` (one-way, never reverse). No circular deps. No cross-vertical imports. No cross-module imports (use event bus). Every package exports through `src/index.ts`.
+**Dependency rules:** `apps/` → `modules/` → `packages/` (one-way, never reverse). No circular deps. No cross-vertical imports. No cross-module imports (use event bus). Every package exports through `src/index.ts`. Agent runtime reads module tools via registry — modules never import agent runtime.
+
+**Capability grouping:** Modules declare a `capability` field in their `module-manifest.json` (e.g., `"capability": "crm"`). Modules with the same capability form a logical business group. This is metadata, not a folder layer.
 
 **Key patterns:**
 
@@ -57,6 +60,7 @@ Level 1: Foundation       (packages/database, ui, config, utils)
 - Event bus for module-to-module communication (ADR-021)
 - AsyncLocalStorage for tenant context (ADR-022)
 - Module manifests for self-describing business modules (ADR-020)
+- Agent runtime + tool registry for AI agent orchestration (ADR-023)
 
 ---
 

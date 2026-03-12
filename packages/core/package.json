@@ -12,7 +12,8 @@
     "./rbac": "./src/rbac/index.ts",
     "./api": "./src/api/index.ts",
     "./platform": "./src/platform/index.ts",
-    "./events": "./src/events/index.ts"
+    "./events": "./src/events/index.ts",
+    "./agent-runtime": "./src/agent-runtime/index.ts"
   },
   "scripts": {
     "build": "tsc",

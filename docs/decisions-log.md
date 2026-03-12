@@ -1,7 +1,7 @@
 # Architecture Decision Records — SaaS Platform (PROD-004)
 
 > Last updated: 2026-03-12
-> Total ADRs: 22 + Technology Validation summary
+> Total ADRs: 23 + Technology Validation summary
 
 ## ADR-001: Modular Monolith Over Microservices
 
@@ -464,3 +464,24 @@ export const platformConfig = {
 **Context:** Multi-tenant requests need tenant identity available everywhere in the call stack — database queries (for RLS), event publishing, logging, feature flags. Passing `tenantId` as a parameter through every function is error-prone and creates noisy APIs. Node.js `AsyncLocalStorage` is the standard solution (used by Next.js, NestJS, Hono, and recommended by 20+ multi-tenancy guides).
 **Decision:** Use `AsyncLocalStorage` to carry `TenantContext` (tenantId, orgId, userId, plan, features, enabledModules) through every request. Middleware sets the context once; all downstream code reads via `getTenantContext()`. The database layer reads `getCurrentTenantId()` to set the PostgreSQL session variable for RLS (`SET app.current_tenant_id`). A `tryGetTenantContext()` variant returns null for non-tenant-scoped code (migrations, seeds).
 **Consequences:** `TenantContext` interface, `withTenantContext()`, `getTenantContext()`, `tryGetTenantContext()`, `getCurrentTenantId()`, and `isModuleEnabled()` added to `@saas-platform/core/tenancy`. All request-handling middleware must call `withTenantContext()`. Background jobs must set tenant context before processing. No manual tenant_id filtering in queries — RLS handles it.
+
+---
+
+## ADR-023: Agent Runtime and Tool Registry Architecture
+
+**Date:** 2026-03-12
+**Status:** Accepted
+**Context:** Module manifests declared `agentTools` but nothing consumed them. The platform had no mechanism for AI agents to discover, execute, or audit tool usage across modules. Research across Shopify, AWS SaaS Factory, TrueFoundry, and 50+ sources confirmed that agent orchestration is a platform-level concern — modules contribute tools upward, never own the orchestration. Additionally, there was no formal concept of "capability grouping" — the ability to logically group related modules (e.g., `crm-contacts` + `crm-deals` under the `crm` capability).
+**Decision:** (1) Add an Agent Runtime package at `packages/core/src/agent-runtime/` as a Level 2 Platform Capability. It provides a `ToolRegistry` singleton for centralised tool discovery, tenant-scoped execution, and audit logging. Modules register tools at startup; the runtime discovers tools filtered by tenant's enabled modules. (2) Add a mandatory `capability` field (kebab-case) to every module manifest. Modules with the same capability form a logical business group. This is metadata in the manifest, not a folder layer — the file system stays flat. (3) Add fitness functions FF-013 (capability field validation) and FF-014 (agent runtime isolation — no imports from modules or apps).
+**Research:** `smith-ai-agency/research/hierarchical-code-separation-modular-monolith-saas.md` (50+ sources), ChatGPT/Gemini architecture analysis
+**Rationale:**
+
+- **Hub-and-Spoke pattern** (TrueFoundry, AWS): Central registry + distributed tool implementations. Prevents tool sprawl and ensures tenant isolation.
+- **Capability grouping via metadata** (Shopify Packwerk, DDD Bounded Contexts): At <10 modules, modules ARE capabilities. Adding a folder layer adds complexity without value. The manifest `capability` field provides grouping for discovery, documentation, and agent tool organisation without structural overhead.
+- **Shared Kernel Trap avoidance**: Agent runtime reads manifests and registered handlers — it never imports module code directly. This prevents the #1 anti-pattern identified in the research.
+  **Consequences:**
+- `ToolRegistry` class with `register()`, `execute()`, `getToolsForTenant()`, `getToolsByCapability()` at `@saas-platform/core/agent-runtime`
+- `AgentTool`, `ToolRegistration`, `ToolExecutionResult`, `ToolAuditEntry` types exported
+- `module-manifest.schema.json` updated with required `capability` field
+- Architecture fitness tests enforce: every manifest has a valid capability (FF-013), agent runtime has no module/app imports (FF-014)
+- Module template updated with `capability` field

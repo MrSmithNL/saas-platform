@@ -1,6 +1,7 @@
 {
   "$schema": "../../tooling/schemas/module-manifest.schema.json",
   "name": "template",
+  "capability": "template",
   "displayName": "Template Module",
   "version": "0.0.0",
   "description": "Golden path template — copy this to create a new module",
