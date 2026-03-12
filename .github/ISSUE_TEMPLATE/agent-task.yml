@@ -1,0 +1,114 @@
+name: Agent Task (WRAP Format)
+description: A task that can be executed by an AI coding agent
+title: "[TASK] "
+labels: ["agent-task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Agent-Executable Task
+        This template follows the WRAP format (Write effectively, Refine instructions, Atomic tasks, Pair with the agent).
+        Fill in every section — agents only know what is written here.
+
+  - type: input
+    id: epic
+    attributes:
+      label: Epic
+      description: Which epic does this task belong to?
+      placeholder: "e.g. epic:onboarding"
+    validations:
+      required: true
+
+  - type: input
+    id: spec
+    attributes:
+      label: Spec Reference
+      description: Link to the spec file (if applicable)
+      placeholder: "e.g. specs/001-auth/status.md or N/A"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What is this task part of? Link to spec, epic, or parent issue.
+      placeholder: |
+        This task implements step 3 of the auth feature (specs/001-auth/tasks.md#T-003).
+        Part of the onboarding epic, linked to Q2-KR3 (reduce time-to-first-value).
+    validations:
+      required: true
+
+  - type: textarea
+    id: task
+    attributes:
+      label: Task Description
+      description: Clear, imperative description of what to build. Write as if for someone brand new to the codebase.
+      placeholder: |
+        Create the login page component at `apps/sell-funnel/src/app/login/page.tsx` that:
+        1. Renders an email + password form
+        2. Calls the auth API on submit
+        3. Redirects to /dashboard on success
+        4. Shows error message on failure
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Verifiable outcomes. Use WHEN/THEN format where possible.
+      placeholder: |
+        - [ ] WHEN user submits valid credentials THEN they are redirected to /dashboard
+        - [ ] WHEN user submits invalid credentials THEN an error message is displayed
+        - [ ] Tests pass: `pnpm test -- --filter=login`
+        - [ ] No new lint errors
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: Files to Modify
+      description: List specific files and what changes in each.
+      placeholder: |
+        - `apps/sell-funnel/src/app/login/page.tsx` — create new (login form)
+        - `packages/core/src/auth/index.ts` — add loginWithPassword function
+        - `packages/core/src/__tests__/auth.test.ts` — add login tests
+    validations:
+      required: true
+
+  - type: textarea
+    id: patterns
+    attributes:
+      label: Patterns to Follow
+      description: Link to existing code examples the agent should match.
+      placeholder: |
+        - See `apps/sell-funnel/src/app/page.tsx` for the page component pattern
+        - See `packages/core/src/tenancy/index.ts` for the module export pattern
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of Scope
+      description: Explicitly list what NOT to do. Agents pursue adjacent work unless told not to.
+      placeholder: |
+        - Do NOT implement password reset flow (separate task)
+        - Do NOT modify the navigation component
+        - Do NOT add OAuth providers (later task)
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of Done
+      description: What makes this task complete?
+      value: |
+        - [ ] All acceptance criteria met
+        - [ ] Tests pass (including new tests)
+        - [ ] PR includes debt declaration (all 4 fields)
+        - [ ] No new lint warnings
+        - [ ] Changes stay within the scope listed above
+    validations:
+      required: true
