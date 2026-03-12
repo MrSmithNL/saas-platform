@@ -14,7 +14,7 @@
     "@saas-platform/database": "workspace:*",
     "@saas-platform/ui": "workspace:*",
     "@saas-platform/utils": "workspace:*",
-    "next": "^15.2.0",
+    "next": "^16.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

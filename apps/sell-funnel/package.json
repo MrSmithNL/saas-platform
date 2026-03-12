@@ -19,7 +19,7 @@
     "@saas-platform/ai-gateway": "workspace:*",
     "@saas-platform/feature-flags": "workspace:*",
     "@saas-platform/notifications": "workspace:*",
-    "next": "^15.2.0",
+    "next": "^16.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
