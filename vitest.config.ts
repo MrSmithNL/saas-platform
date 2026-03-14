@@ -19,7 +19,7 @@ export default defineConfig({
         lines: 80,
         branches: 70,
       },
-      include: ["packages/core/src/**"],
+      include: ["packages/*/src/**", "modules/*/src/**"],
       exclude: [
         "node_modules/**",
         "dist/**",

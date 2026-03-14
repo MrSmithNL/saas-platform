@@ -25,11 +25,9 @@ if (!existsSync(APPROVED_PATH)) {
 }
 
 const approved = JSON.parse(readFileSync(APPROVED_PATH, "utf-8"));
-const approvedSet = new Set([
-  ...approved.production,
-  ...approved.development,
-  ...approved.workspace,
-]);
+const approvedSet = new Set(
+  Array.isArray(approved.approved) ? approved.approved : []
+);
 
 const errors = [];
 const checked = [];

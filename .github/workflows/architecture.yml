@@ -42,31 +42,35 @@ jobs:
             exit 1
           fi
 
-      # FF-009: No hardcoded tenant IDs
-      - name: "FF-009: No hardcoded tenant IDs"
+      # FF-009: No hardcoded tenant IDs or UUIDs
+      - name: "FF-009: No hardcoded tenant IDs or UUIDs"
         run: |
           FOUND=$(grep -r --include="*.ts" --include="*.tsx" \
-            -E "tenant[_-]?id\s*[:=]\s*['\"][a-f0-9-]{8,}" \
-            packages/ apps/ 2>/dev/null | \
+            -E "tenant[_-]?id\s*[:=]\s*['\"][a-f0-9-]{8,}|['\"][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}['\"]" \
+            packages/ apps/ modules/ 2>/dev/null | \
             grep -v node_modules | \
             grep -v '.test.' | \
             grep -v '__tests__' | \
             grep -v '.spec.' || true)
           if [ -n "$FOUND" ]; then
-            echo "::error::Hardcoded tenant IDs detected"
+            echo "::error::Hardcoded tenant IDs or UUIDs detected"
             echo "$FOUND"
             exit 1
           fi
           echo "No hardcoded tenant IDs found"
 
+      # FF-013/FF-014 + all boundary tests: Vitest architecture fitness tests
+      - name: "FF-013/014: Vitest architecture fitness tests (boundaries, manifests, isolation)"
+        run: pnpm vitest run --config tooling/tests/vitest.arch.config.ts
+
       # FF-010: Approved dependency check
       - name: "FF-010: Dependency governance — approved list check"
         run: node tooling/scripts/check-dependencies.mjs
 
-      # FF-008: File naming convention (kebab-case)
+      # FF-008: File naming convention (kebab-case) — ERROR, grace period ended
       - name: "FF-008: File naming convention (kebab-case)"
         run: |
-          BAD_FILES=$(find packages/ apps/ -name "*.ts" -o -name "*.tsx" | \
+          BAD_FILES=$(find packages/ apps/ modules/ -name "*.ts" -o -name "*.tsx" | \
             grep -v node_modules | \
             grep -v '.d.ts' | \
             grep -v '__tests__' | \
@@ -79,14 +83,28 @@ jobs:
               case "$BASE" in
                 index.*|middleware.*|layout.*|page.*|loading.*|error.*|not-found.*|global.*) continue ;;
               esac
+              # Allow PascalCase for React components (.tsx only)
+              if echo "$BASE" | grep -qE '\.tsx$' && echo "$BASE" | grep -qE '^[A-Z]'; then
+                continue
+              fi
               # Check for uppercase letters (not kebab-case)
               if echo "$BASE" | grep -qE '[A-Z]'; then
                 echo "$f"
               fi
             done || true)
           if [ -n "$BAD_FILES" ]; then
-            echo "::warning::Files not following kebab-case naming:"
+            echo "::error::Files not following kebab-case naming convention:"
             echo "$BAD_FILES"
-            # Warning only for now — will become error after grace period
+            exit 1
           fi
           echo "File naming check complete"
+
+      # FF-015: Archgate executable ADR validation
+      - name: "FF-015: Archgate — executable ADR checks"
+        run: npx archgate check
+
+      # FF-016: Secrets scan
+      - name: "FF-016: Gitleaks — secrets detection"
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,3 @@
+# Gitleaks false positive allowlist
+# Format: one commit hash or fingerprint per line
+# Only add entries after manual verification that they are NOT real secrets

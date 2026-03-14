@@ -58,6 +58,11 @@ export const baseConfig = [
           capture: ["app"],
         },
         {
+          type: "module",
+          pattern: "modules/*",
+          capture: ["module"],
+        },
+        {
           type: "package",
           pattern: "packages/*",
           capture: ["package"],
@@ -68,6 +73,8 @@ export const baseConfig = [
         "**/*.test.tsx",
         "**/*.spec.ts",
         "**/*.spec.tsx",
+        "tooling/**",
+        ".archgate/**",
       ],
     },
     rules: {
@@ -93,11 +100,11 @@ export const baseConfig = [
       "max-params": ["error", { max: 4 }],
       // Function length: max 30 lines (excluding comments/blanks)
       "max-lines-per-function": [
-        "warn",
+        "error",
         { max: 30, skipBlankLines: true, skipComments: true },
       ],
       // File length: max 400 lines
-      "max-lines": ["warn", { max: 400, skipBlankLines: true, skipComments: true }],
+      "max-lines": ["error", { max: 400, skipBlankLines: true, skipComments: true }],
 
       // No console.log (warn)
       "no-console": ["warn", { allow: ["warn", "error"] }],
@@ -142,6 +149,10 @@ export const baseConfig = [
           rules: [
             {
               from: ["app"],
+              allow: ["package", "module"],
+            },
+            {
+              from: ["module"],
               allow: ["package"],
             },
             {
@@ -211,6 +222,10 @@ export const baseConfig = [
               allow: ["index.ts", "index.tsx", "index.js", "index.mjs"],
             },
             {
+              target: ["module"],
+              allow: ["index.ts", "index.tsx", "index.js", "index.mjs"],
+            },
+            {
               target: ["app"],
               allow: "**",
             },
@@ -247,6 +262,16 @@ export const baseConfig = [
       "no-console": "off",
       "@typescript-eslint/no-require-imports": "off",
       "max-lines-per-function": "off",
+    },
+  },
+
+  // Archgate rule files — relaxed complexity (rule logic is inherently nested)
+  {
+    files: [".archgate/**/*.ts"],
+    rules: {
+      "max-lines-per-function": "off",
+      complexity: "off",
+      "max-depth": "off",
     },
   },
 ];

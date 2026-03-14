@@ -1,7 +1,7 @@
 # Architecture Decision Records — SaaS Platform (PROD-004)
 
-> Last updated: 2026-03-10
-> Total ADRs: 19 + Technology Validation summary
+> Last updated: 2026-03-12
+> Total ADRs: 23 + Technology Validation summary
 
 ## ADR-001: Modular Monolith Over Microservices
 
@@ -433,3 +433,55 @@ export const platformConfig = {
 | Team grows to 5+ developers        | Add CODEOWNERS per package                        |
 | 15+ verticals                      | Extract stable packages to npm                    |
 | White-label the platform           | Add CLI scaffold for initial vertical setup       |
+
+---
+
+## ADR-020: 6-Level Code Separation Hierarchy
+
+**Date:** 2026-03-12
+**Status:** Accepted
+**Context:** The original 4-layer architecture (Foundation → Core → Services → Verticals) treated all shared code as "packages" and all products as "apps". This created a gap: there was no concept of pluggable business modules that could be enabled/disabled per tenant. Business features like CRM, marketing tools, or analytics dashboards don't belong in `packages/` (they're not platform infrastructure) or `apps/` (they're shared across verticals). Research across 100+ sources (Shopify, GitHub, AWS, Neal Ford, ETH Zurich) validated the need for a distinct modules layer.
+**Decision:** Adopt a 6-level code separation hierarchy: L1 Foundation (`packages/database`, `ui`, `config`, `utils`) → L2 Capabilities (`packages/core/*`, `ai-gateway`, `notifications`, `feature-flags`) → L3 Business Modules (`modules/*`) → L4 Agent Runtime (`packages/core/agent-runtime`) → L5 Verticals (`apps/*`) → L6 Tenant Configuration (runtime data). Add `modules/` as a new workspace root in `pnpm-workspace.yaml`. Enforce strict one-way dependencies: `apps/` → `modules/` → `packages/`.
+**Research:** `smith-ai-agency/docs/capabilities/development-architecture-framework.md`, ChatGPT/Gemini architecture analysis, Shopify modular monolith, Neal Ford's fitness functions
+**Consequences:** `modules/*` workspace root added. Golden path template at `modules/_template/`. `pnpm create:module` scaffold script. Architecture fitness tests updated to check module boundaries. Every module must have a `module-manifest.json`. Modules communicate via event bus, never via direct imports.
+
+---
+
+## ADR-021: Module Architecture with Event-Driven Communication
+
+**Date:** 2026-03-12
+**Status:** Accepted
+**Context:** Business modules need to communicate (e.g., CRM module reacts to billing changes). Direct imports between modules would create tight coupling, making it impossible to enable/disable modules per tenant. The ChatGPT analysis recommended event-driven communication; industry consensus (Shopify, AWS) confirms this is the standard pattern for modular monoliths.
+**Decision:** Modules communicate exclusively via a typed event bus (`packages/core/events`). Every module declares events it emits and subscribes to in its `module-manifest.json`. Events follow the naming convention `{module}.{entity}.{action}` (e.g., `crm.contact.created`). Implementation phases: Phase 1 = in-process EventEmitter, Phase 2 = async queue (Trigger.dev), Phase 3 = external broker (only if microservices extraction needed). The interface remains stable across all phases.
+**Consequences:** `PlatformEvent<T>` type and `eventBus` singleton added to `@saas-platform/core/events`. Event contracts are typed — TypeScript catches mismatches at compile time. Module manifests must declare all emitted/subscribed events. No direct module-to-module imports enforced by architecture tests.
+
+---
+
+## ADR-022: Tenant Context via AsyncLocalStorage
+
+**Date:** 2026-03-12
+**Status:** Accepted
+**Context:** Multi-tenant requests need tenant identity available everywhere in the call stack — database queries (for RLS), event publishing, logging, feature flags. Passing `tenantId` as a parameter through every function is error-prone and creates noisy APIs. Node.js `AsyncLocalStorage` is the standard solution (used by Next.js, NestJS, Hono, and recommended by 20+ multi-tenancy guides).
+**Decision:** Use `AsyncLocalStorage` to carry `TenantContext` (tenantId, orgId, userId, plan, features, enabledModules) through every request. Middleware sets the context once; all downstream code reads via `getTenantContext()`. The database layer reads `getCurrentTenantId()` to set the PostgreSQL session variable for RLS (`SET app.current_tenant_id`). A `tryGetTenantContext()` variant returns null for non-tenant-scoped code (migrations, seeds).
+**Consequences:** `TenantContext` interface, `withTenantContext()`, `getTenantContext()`, `tryGetTenantContext()`, `getCurrentTenantId()`, and `isModuleEnabled()` added to `@saas-platform/core/tenancy`. All request-handling middleware must call `withTenantContext()`. Background jobs must set tenant context before processing. No manual tenant_id filtering in queries — RLS handles it.
+
+---
+
+## ADR-023: Agent Runtime and Tool Registry Architecture
+
+**Date:** 2026-03-12
+**Status:** Accepted
+**Context:** Module manifests declared `agentTools` but nothing consumed them. The platform had no mechanism for AI agents to discover, execute, or audit tool usage across modules. Research across Shopify, AWS SaaS Factory, TrueFoundry, and 50+ sources confirmed that agent orchestration is a platform-level concern — modules contribute tools upward, never own the orchestration. Additionally, there was no formal concept of "capability grouping" — the ability to logically group related modules (e.g., `crm-contacts` + `crm-deals` under the `crm` capability).
+**Decision:** (1) Add an Agent Runtime package at `packages/core/src/agent-runtime/` as a Level 2 Platform Capability. It provides a `ToolRegistry` singleton for centralised tool discovery, tenant-scoped execution, and audit logging. Modules register tools at startup; the runtime discovers tools filtered by tenant's enabled modules. (2) Add a mandatory `capability` field (kebab-case) to every module manifest. Modules with the same capability form a logical business group. This is metadata in the manifest, not a folder layer — the file system stays flat. (3) Add fitness functions FF-013 (capability field validation) and FF-014 (agent runtime isolation — no imports from modules or apps).
+**Research:** `smith-ai-agency/research/hierarchical-code-separation-modular-monolith-saas.md` (50+ sources), ChatGPT/Gemini architecture analysis
+**Rationale:**
+
+- **Hub-and-Spoke pattern** (TrueFoundry, AWS): Central registry + distributed tool implementations. Prevents tool sprawl and ensures tenant isolation.
+- **Capability grouping via metadata** (Shopify Packwerk, DDD Bounded Contexts): At <10 modules, modules ARE capabilities. Adding a folder layer adds complexity without value. The manifest `capability` field provides grouping for discovery, documentation, and agent tool organisation without structural overhead.
+- **Shared Kernel Trap avoidance**: Agent runtime reads manifests and registered handlers — it never imports module code directly. This prevents the #1 anti-pattern identified in the research.
+  **Consequences:**
+- `ToolRegistry` class with `register()`, `execute()`, `getToolsForTenant()`, `getToolsByCapability()` at `@saas-platform/core/agent-runtime`
+- `AgentTool`, `ToolRegistration`, `ToolExecutionResult`, `ToolAuditEntry` types exported
+- `module-manifest.schema.json` updated with required `capability` field
+- Architecture fitness tests enforce: every manifest has a valid capability (FF-013), agent runtime has no module/app imports (FF-014)
+- Module template updated with `capability` field

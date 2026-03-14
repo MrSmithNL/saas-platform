@@ -60,3 +60,10 @@ nav:
   - Technical Architecture Plan: technical-architecture-plan.md
   - Security Risk Log: security-risk-log.md
   - Todo: todo.md
+  - Operations:
+    - Rollback Runbook: rollback-runbook.md
+  - Development:
+    - Specs:
+      - "E-001 SellFunnel MVP": specs/E-001-sell-funnel-mvp/epic-status.md
+    - Research:
+      - SellFunnel Competitor Analysis: specs/research/sell-funnel-competitor-analysis.md

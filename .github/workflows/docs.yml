@@ -7,6 +7,7 @@ on:
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
+      - 'specs/**'
   workflow_dispatch:
 
 permissions:
@@ -31,6 +32,12 @@ jobs:
       - name: Install dependencies
         run: |
           pip install mkdocs-material mkdocs-encryptcontent-plugin
+
+      - name: Copy specs into docs
+        run: |
+          if [ -d specs ]; then
+            cp -r specs docs/specs
+          fi
 
       - name: Build site
         run: mkdocs build
